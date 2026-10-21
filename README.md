@@ -4,9 +4,9 @@ Investigate stuck orders and billing issues, read customer conversations and con
 
 [Summer](https://gosummer.ai) brings the conversation, investigation evidence and proposed next step into one support workspace. Its hosted MCP server lets your agent work with the same company records and setup.
 
-**Hosted endpoint:** `https://api.gosummer.ai/mcp`  
-**Transport:** Streamable HTTP  
-**Sign-in:** Summer OAuth, with companies, environments and permissions you choose
+- **Hosted endpoint:** `https://api.gosummer.ai/mcp`
+- **Transport:** Streamable HTTP
+- **Sign-in:** Summer OAuth, with companies, environments and permissions you choose
 
 [Connect your client](https://gosummer.ai/docs/mcp-clients) · [Explore integrations](https://gosummer.ai/docs/service-connections) · [Book a demo](https://gosummer.ai/book)
 
