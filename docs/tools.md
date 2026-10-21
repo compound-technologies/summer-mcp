@@ -52,7 +52,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_assistant_read` | setup | Read assistant settings per installation and whether the managed runtime is enabled. |
 | `summer_messenger_leads_list` | cases.read | Read consented website leads for this company and environment. Includes volunteered contact details and original submission references. |
 | `summer_messenger_assistant_update` | setup | Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit. |
-| `summer_messenger_voice_read` | setup | Read voice chat settings per installation, the available voices, published help article count and the voice assistant's update status. |
+| `summer_messenger_voice_read` | setup | Read voice chat settings per installation, the voice services and their voices, published help article count and the voice assistant's update status. |
 | `summer_messenger_voice_update` | setup | Update voice chat settings with the expected revision. Summer updates the voice assistant from these settings and the company's published help articles. |
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
