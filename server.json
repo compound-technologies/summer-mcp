@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.gosummer/summer",
+  "title": "Summer",
+  "description": "Telehealth support for Claude, Codex and Cursor: investigate cases and connect your tools.",
+  "version": "0.1.2",
+  "websiteUrl": "https://gosummer.ai/docs/mcp-clients",
+  "icons": [
+    {
+      "src": "https://gosummer.ai/social/summer-icon-192.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "192x192"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.gosummer.ai/mcp"
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/compound-technologies/summer-mcp",
+    "source": "github"
+  }
+}

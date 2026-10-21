@@ -1,0 +1,376 @@
+// Summer developer contract: scopes, operations, ownership and error codes.
+// The API router, MCP tools, OpenAPI document and CLI help are derived from
+// this one catalog, so the three transports cannot drift apart silently.
+// This is Summer's contract. It shares no authority with customer-system integrations.
+import { z } from "zod";
+import { capabilityDefinition, capabilityPath, capabilityResult } from "./schemas/capabilities.ts";
+import { guideId, saveGuideInput, saveArticleInput, publishGuideInput, unpublishGuideInput, createAssetInput, editAssetInput, saveHostingInput, verifyHostingInput } from "./schemas/guides.ts";
+
+export const API_VERSION = "2026-10-20";
+export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"] as const;
+
+export const SCOPES = {
+  setup: {
+    title: "Set up Summer",
+    description: "Inspect and update capability readiness, configure integrations, install and enable Messenger in the selected environments, save selected credentials without reading them back, upload company knowledge and run supported checks.",
+    admin: true,
+  },
+  "cases.read": {
+    title: "Read cases",
+    description: "Read company-owned cases, conversations, related records, attachments, runs, plans and receipts.",
+    admin: false,
+  },
+  "investigations.request": {
+    title: "Request investigations",
+    description: "Ask Summer to investigate a case or revise a plan. Results still need human review.",
+    admin: false,
+  },
+  "actions.prepare": {
+    title: "Prepare actions for approval",
+    description: "Prepare the exact work in a saved plan so a person can approve it in Summer. Never approves or executes anything.",
+    admin: false,
+  },
+  "credentials.replace": {
+    title: "Replace live credentials",
+    description: "Replace or remove a provider credential that is already saved and active.",
+    admin: true,
+  },
+  "messaging.activate": {
+    title: "Turn on production messaging",
+    description: "Enable a production Messenger installation or automatic production assistant replies.",
+    admin: true,
+  },
+  "guides.publish": {
+    title: "Publish customer guides",
+    description: "Publish or unpublish exact customer guide revisions and configure their public custom domain. Draft authoring and private uploads use setup.",
+    admin: true,
+  },
+  "automation.manage": {
+    title: "Manage automation",
+    description: "Create, rotate and disable company service accounts and signed webhooks.",
+    admin: true,
+  },
+  // Service-account scopes. People reach events through setup.
+  "events.read": { title: "Read events", description: "Read the company's configuration and activity events.", admin: false },
+  "capabilities.read": { title: "Read capabilities", description: "Read company capabilities and setup status.", admin: false },
+} as const;
+export type Scope = keyof typeof SCOPES;
+export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
+export const SERVICE_SCOPES = ["events.read", "capabilities.read"] as const satisfies readonly Scope[];
+export const ENVIRONMENTS = ["staging", "production"] as const;
+export type Environment = (typeof ENVIRONMENTS)[number];
+
+// Never part of any grant. Listed so clients and docs can say so precisely.
+export const HUMAN_ONLY = [
+  "Approving a business effect, outgoing customer message or plan execution",
+  "Revealing a saved credential value",
+  "Approving Summer platform access requests",
+  "Ownership transfer and owner/admin role grants",
+  "Raising model or assistant spending limits",
+  "Identity-verification attestations and clinical directions",
+] as const;
+
+export const ERROR_CODES = {
+  invalid_request: 400, invalid_token: 401, insufficient_scope: 403, approval_pending: 403, access_blocked: 403,
+  company_not_granted: 403, environment_not_granted: 403, not_a_member: 403, admin_required: 403, human_required: 403,
+  not_found: 404, method_not_allowed: 405, version_conflict: 409, idempotency_conflict: 422, idempotency_in_progress: 409,
+  outcome_uncertain: 409, payload_too_large: 413, rate_limited: 429, unsupported: 422, unavailable: 503, developer_platform_disabled: 404,
+} as const;
+export type ErrorCode = keyof typeof ERROR_CODES;
+export class ApiError extends Error {
+  code: ErrorCode; details?: Record<string, unknown>; retryable: boolean;
+  constructor(code: ErrorCode, message: string, details?: Record<string, unknown>, retryable = false) { super(message); this.code = code; this.details = details; this.retryable = retryable; }
+  get status() { return ERROR_CODES[this.code]; }
+}
+
+// Capability and setup states. "saved" is storage only; "verified" needs a
+// supported live check bound to the current configuration revision.
+export const STATES = ["saved", "verified", "pending", "unavailable", "enabled", "disabled", "not_configured", "failed", "unsupported"] as const;
+export type State = (typeof STATES)[number];
+export const UNAVAILABLE_REASONS = [
+  "missing_scope", "admin_required", "approval_pending", "company_not_granted", "environment_not_granted",
+  "environment_not_served", "operational_connection_pending", "case_data_not_admitted", "operations_source_external",
+  "messenger_backend_unavailable", "credential_storage_unavailable", "unsupported", "human_required",
+] as const;
+export type UnavailableReason = (typeof UNAVAILABLE_REASONS)[number];
+
+const uuid = z.string().uuid();
+export const schemas = {
+  uuid,
+  company: uuid.describe("Summer company ID"),
+  environment: z.enum(ENVIRONMENTS).describe("Environment that owns the resource"),
+  credentialName: z.string().regex(/^[A-Z][A-Z0-9_]{0,127}$/).describe("Credential variable name, for example STRIPE_READ_KEY"),
+  knowledgeId: z.string().regex(/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/).max(120).describe("Knowledge document ID"),
+  version: z.number().int().min(0).describe("Current version you expect; 0 when the resource does not exist yet"),
+  timezone: z.string().max(100),
+  messengerSettings: z.object({
+    enabled: z.boolean().describe("Live widget. The approved setup grant includes production installation and activation."),
+    guests_enabled: z.boolean(),
+    display_name: z.string().trim().min(1).max(80),
+    allowed_origins: z.array(z.string().max(256)).min(1).max(20).describe("Exact website origins, https (http://localhost allowed in staging)"),
+    privacy_url: z.string().max(512),
+    fallback_url: z.string().max(512),
+    office_hours: z.string().max(200),
+    routing: z.object({
+      clinician_url: z.string().max(512).optional(), sign_in_url: z.string().max(512).optional(), catalog_url: z.string().max(512).optional(),
+      offer_url: z.string().max(512).optional(), offer_label: z.string().max(80).optional(), destination_origins: z.array(z.string().max(256)).max(10).optional(),
+    }).strict().optional(),
+  }).strict(),
+  assistantSettings: z.object({
+    enabled: z.boolean().describe("Automatic replies. The approved setup grant includes production activation within the current spending limit."),
+    instructions: z.string().trim().min(1).max(50000),
+    lead_capture_enabled: z.boolean().optional().describe("Offer an optional consent-based contact form in chat."),
+    escalation_enabled: z.boolean().optional().describe("Allow investigation handoffs. Set false for a product and sales chat."),
+    budget_cents: z.number().int().min(1).max(10000).describe("Cannot exceed the current limit through the API"),
+  }).strict(),
+};
+
+export type Ownership = "user" | "company" | "environment";
+export type Effect = "read" | "write" | "secret_write" | "request";
+export type McpExposure = "full" | "handoff" | "none";
+export type Operation = {
+  destructive?: boolean;
+  id: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  path: string;
+  scope: Scope | null;
+  ownership: Ownership;
+  effect: Effect;
+  summary: string;
+  params?: z.ZodObject<z.ZodRawShape>;
+  query?: z.ZodObject<z.ZodRawShape>;
+  body?: z.ZodType;
+  mcp: McpExposure;
+  release: "A" | "B" | "C" | "D";
+  // When set, an alternate scope also admits the operation (for example a
+  // service account reading events instead of a person with setup).
+  alsoScope?: Scope;
+  /** Raw file bytes use the same authorization/executor, never MCP arguments. */
+  bodyKind?: "binary";
+};
+
+const companyEnv = z.object({ company: schemas.company, environment: schemas.environment }).strict();
+const companyOnly = z.object({ company: schemas.company }).strict();
+const page = z.object({ cursor: z.string().max(200).optional(), limit: z.coerce.number().int().min(1).max(200).optional() }).strict();
+const credentialBody = z.discriminatedUnion("source", [
+  z.object({ source: z.literal("value"), value: z.string().min(1).max(16384), expected_version: schemas.version }).strict(),
+  z.object({ source: z.literal("doppler"), secret_name: schemas.credentialName, expected_version: schemas.version }).strict(),
+]);
+const caseParams = companyEnv.extend({ case: uuid }).strict();
+
+export const OPERATIONS: Operation[] = [
+  // Account: any connection, including a person whose access is pending.
+  { id: "account.me", method: "GET", path: "/me", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
+    summary: "Show the signed-in person, Summer access status and this connection's grant." },
+  { id: "account.companies.list", method: "GET", path: "/companies", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
+    summary: "List companies the person can access and whether this connection includes each one." },
+  { id: "account.access_request.read", method: "GET", path: "/access-request", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
+    summary: "Read the person's Summer access request. Approval is a separate Summer team decision." },
+  { id: "account.access_request.submit", method: "POST", path: "/access-request", scope: null, ownership: "user", effect: "request", mcp: "full", release: "A",
+    summary: "Submit or update a Summer access request. This cannot approve access.",
+    body: z.object({ company_name: z.string().trim().min(1).max(120), note: z.string().trim().max(2000) }).strict() },
+  { id: "account.invitation.accept", method: "POST", path: "/invitations/accept", scope: null, ownership: "user", effect: "write", mcp: "none", release: "A",
+    summary: "Accept a company invitation sent to this person. Authorize again to add the company to a connection.",
+    body: z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict() },
+  { id: "account.connections.list", method: "GET", path: "/connections", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
+    summary: "List this person's agent connections, grants, last use and expiry." },
+  { id: "account.connections.revoke", method: "POST", path: "/connections/{connection}/revoke", scope: null, ownership: "user", effect: "write", mcp: "full", release: "A",
+    summary: "Revoke one of this person's agent connections immediately.", params: z.object({ connection: uuid }).strict(),
+    body: z.object({ reason: z.string().trim().max(200).optional() }).strict() },
+
+  // Release A: setup.
+  { id: "guides.get", method: "GET", path: "/companies/{company}/guides", scope: "setup", alsoScope: "guides.publish", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the company's editable guidebook, draft articles, assets and publication state. Customer guides share the existing company knowledge source.", params: companyOnly },
+  { id: "guides.save", method: "PUT", path: "/companies/{company}/guides", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Create or edit guidebook details at the expected version. Saves a private draft; does not publish.", params: companyOnly, body: saveGuideInput },
+  { id: "guides.articles.get", method: "GET", path: "/companies/{company}/guides/articles/{article}", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read an editable guide article and its current knowledge revision.", params: companyOnly.extend({ article: guideId }).strict() },
+  { id: "guides.articles.save", method: "PUT", path: "/companies/{company}/guides/articles/{article}", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Create or edit a Markdown customer article with source references and managed asset IDs. Saves a draft in the shared knowledge library; later edits do not change a published release.", params: companyOnly.extend({ article: guideId }).strict(), body: saveArticleInput },
+  { id: "guides.preview", method: "GET", path: "/companies/{company}/guides/preview", scope: "setup", alsoScope: "guides.publish", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the exact current draft, article revisions and authenticated preview URL before publishing. No public access token is issued.", params: companyOnly },
+  { id: "guides.authoring", method: "GET", path: "/companies/{company}/guides/authoring", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Get the reviewed company-specific guide-building instructions for your native coding agent. It uses its own authorized writing, screenshot, image and video tools, then Summer's upload and publication APIs. No model run or customer effect starts from this read.", params: companyOnly },
+  { id: "guides.publish", method: "POST", path: "/companies/{company}/guides/publish", scope: "guides.publish", ownership: "company", effect: "request", mcp: "full", release: "A",
+    summary: "Publish the exact selected article revisions and ready media to the company's customer help center. Requires explicit publication authority; does not approve customer business actions.", params: companyOnly, body: publishGuideInput },
+  { id: "guides.unpublish", method: "POST", path: "/companies/{company}/guides/unpublish", scope: "guides.publish", ownership: "company", effect: "request", mcp: "full", release: "A",
+    summary: "Remove the company's guide and release media from Summer's public serving path at the expected version. Downloaded copies cannot be recalled.", params: companyOnly, body: unpublishGuideInput },
+  { id: "guides.history", method: "GET", path: "/companies/{company}/guides/history", scope: "setup", alsoScope: "guides.publish", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the company's guide edits, upload and publication history.", params: companyOnly },
+  { id: "guides.hosting.get", method: "GET", path: "/companies/{company}/guides/hosting", scope: "setup", alsoScope: "guides.publish", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the optional custom guide domain, DNS instructions and verified HTTPS status. Summer-hosted guide URLs need no customer DNS setup.", params: companyOnly },
+  { id: "guides.hosting.save", method: "PUT", path: "/companies/{company}/guides/hosting", scope: "guides.publish", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Save or remove a custom guide hostname at the expected version. Saving a name does not verify ownership or provision HTTPS.", params: companyOnly, body: saveHostingInput },
+  { id: "guides.hosting.verify", method: "POST", path: "/companies/{company}/guides/hosting/verify", scope: "guides.publish", ownership: "company", effect: "request", mcp: "full", release: "A",
+    summary: "Check the saved domain's DNS ownership, attach it through Summer's hosting connection and verify HTTPS. Returns pending until each check succeeds.", params: companyOnly, body: verifyHostingInput },
+  { id: "assets.list", method: "GET", path: "/companies/{company}/guide-assets", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "List the company's private guide media, metadata and upload status. Uploading does not make a file public.", params: companyOnly },
+  { id: "assets.get", method: "GET", path: "/companies/{company}/guide-assets/{asset}", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read one guide asset, checksum and resumable chunk receipts. No secret upload capability is returned.", params: companyOnly.extend({ asset: uuid }).strict() },
+  { id: "assets.uploads.create", method: "POST", path: "/companies/{company}/guide-assets", scope: "setup", ownership: "company", effect: "request", mcp: "full", release: "A",
+    summary: "Start or recover a private resumable Markdown, image, video, PDF or caption upload from metadata. Transfer file bytes with the trusted local Summer CLI; the hosted MCP server cannot read local paths.", params: companyOnly, body: createAssetInput },
+  { id: "assets.uploads.write", method: "PUT", path: "/companies/{company}/guide-assets/{asset}/chunks/{index}", scope: "setup", ownership: "company", effect: "write", mcp: "none", release: "A", bodyKind: "binary",
+    summary: "Transfer one immutable file chunk of at most 2 MiB as application/octet-stream with the local CLI's Summer token. Never pass binary or base64 file bodies through MCP.",
+    params: companyOnly.extend({ asset: uuid, index: z.coerce.number().int().min(0).max(127).transform(String) }).strict(),
+    body: z.object({ sha256: z.string().regex(/^[a-f0-9]{64}$/), byte_length: z.number().int().min(1).max(2097152) }).strict() },
+  { id: "assets.uploads.complete", method: "POST", path: "/companies/{company}/guide-assets/{asset}/complete", scope: "setup", ownership: "company", effect: "request", mcp: "full", release: "A",
+    summary: "Verify the original size, content signature and SHA-256 against saved private bytes, then mark a guide upload ready. A ready file remains private until published in a guide.", params: companyOnly.extend({ asset: uuid }).strict(), body: z.object({}).strict() },
+  { id: "assets.edit", method: "PATCH", path: "/companies/{company}/guide-assets/{asset}", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Edit guide media captions, alt text, provenance, transcript or poster at the expected version, or retire unused media. Published releases keep their pinned metadata.", params: companyOnly.extend({ asset: uuid }).strict(), body: editAssetInput },
+  { id: "company.capabilities", method: "GET", path: "/companies/{company}/environments/{environment}/capabilities", scope: "setup", alsoScope: "capabilities.read", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "What this connection can do here, with a reason for everything unavailable.", params: companyEnv },
+  { id: "company.setup_status", method: "GET", path: "/companies/{company}/environments/{environment}/setup", scope: "setup", alsoScope: "capabilities.read", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Saved, verified, pending, unavailable and enabled state for each setup item.", params: companyEnv },
+  { id: "capability_checks.list", method: "GET", path: "/companies/{company}/environments/{environment}/capability-checks", scope: "capabilities.read", alsoScope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Read the same operational capability checklist, results, discovery paths and review history shown in Summer. Every usable API, browser or knowledge path can count.", params: companyEnv },
+  { id: "capability_checks.get", method: "GET", path: "/companies/{company}/environments/{environment}/capability-checks/{capability}", scope: "capabilities.read", alsoScope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Read one capability, its concrete test, evidence and latest 20 review records.", params: companyEnv.extend({ capability: capabilityDefinition.shape.id }).strict() },
+  { id: "capability_checks.save", method: "PUT", path: "/companies/{company}/environments/{environment}/capability-checks/{capability}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Edit a capability expectation or add a business-specific custom_ capability with a reason. Resets its result and retains history. Does not create a provider tool or grant execution access.", params: companyEnv.extend({ capability: capabilityDefinition.shape.id }).strict(),
+    body: z.object({ expected_version: schemas.version, definition: capabilityDefinition, notes: z.string().trim().min(1).max(2000) }).strict() },
+  { id: "capability_checks.report", method: "POST", path: "/companies/{company}/environments/{environment}/capability-checks/{capability}/reports", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "A",
+    summary: "Record the setup agent's capability assessment with original evidence and the path Summer can discover and use. A pass needs evidence and a discovery path. Reports are labeled as agent-reported, never human approval or independently verified execution.", params: companyEnv.extend({ capability: capabilityDefinition.shape.id }).strict(),
+    body: z.object({ expected_version: schemas.version, state: capabilityResult, notes: z.string().trim().min(1).max(2000), evidence: z.string().trim().max(2000), fulfillment: capabilityPath.optional() }).strict() },
+  { id: "capability_checks.test", method: "POST", path: "/companies/{company}/environments/{environment}/capability-checks/{capability}/tests", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "A",
+    summary: "Request a read-only Summer capability test on an authorized sample case. Also needs investigations.request and current runtime access. Does not approve or execute customer changes.", params: companyEnv.extend({ capability: capabilityDefinition.shape.id }).strict(),
+    body: z.object({ expected_version: schemas.version, case_id: uuid }).strict() },
+  { id: "company.settings.read", method: "GET", path: "/companies/{company}/settings", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read company-wide settings. Changes affect every environment.", params: companyOnly },
+  { id: "company.settings.update", method: "PATCH", path: "/companies/{company}/settings", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Update company-wide settings with the expected version. Affects every environment.", params: companyOnly,
+    body: z.object({ name: z.string().trim().min(1).max(120), timezone: schemas.timezone, workflow: z.enum(["support", "order_status", "billing", "custom"]), note: z.string().trim().max(1000), expected_version: schemas.version }).strict() },
+  { id: "integrations.list", method: "GET", path: "/companies/{company}/environments/{environment}/integrations", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "List provider integrations, their required fields and saved metadata. Never returns values.", params: companyEnv },
+  { id: "integrations.save", method: "PUT", path: "/companies/{company}/environments/{environment}/integrations/{integration}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Define a custom integration's credential names and labels. No secret values. Saving a definition does not establish runtime access; upload secrets through the local CLI and verify an agent-usable path.", params: companyEnv.extend({ integration: z.string().regex(/^custom-[a-z0-9-]{1,64}$/) }).strict(),
+    body: z.object({ expected_version: schemas.version, name: z.string().trim().min(1).max(100), fields: z.array(z.object({ name: schemas.credentialName, label: z.string().trim().min(1).max(100), required: z.boolean() }).strict()).min(1).max(128) }).strict() },
+  { id: "credentials.list", method: "GET", path: "/companies/{company}/environments/{environment}/credentials", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "List saved credential names, sources and versions. Never returns values.", params: companyEnv },
+  { id: "credentials.set", method: "PUT", path: "/companies/{company}/environments/{environment}/credentials/{name}", scope: "setup", ownership: "environment", effect: "secret_write", mcp: "handoff", release: "A",
+    summary: "Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only.",
+    params: companyEnv.extend({ name: schemas.credentialName }).strict(), body: credentialBody },
+  { id: "credentials.remove", method: "DELETE", path: "/companies/{company}/environments/{environment}/credentials/{name}", scope: "credentials.replace", ownership: "environment", effect: "write", mcp: "none", release: "A",
+    summary: "Remove an active credential with the expected version.", params: companyEnv.extend({ name: schemas.credentialName }).strict(),
+    query: z.object({ expected_version: z.coerce.number().int().min(1) }).strict() },
+  { id: "knowledge.list", method: "GET", path: "/companies/{company}/knowledge", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "List current company knowledge documents. Knowledge is company-wide, not per environment.", params: companyOnly,
+    query: z.object({ query: z.string().max(200).optional(), offset: z.coerce.number().int().min(0).max(100000).optional() }).strict() },
+  { id: "knowledge.create", method: "POST", path: "/companies/{company}/knowledge", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Upload a new company knowledge document with original revision history. The shared company library is used by all roles and environments. An existing document must be read and edited instead.", params: companyOnly,
+    body: z.object({ id: schemas.knowledgeId, path: z.string().regex(/^company\/[a-z0-9][a-z0-9._/-]*\.md$/).max(240), content: z.string().trim().min(1).max(1_000_000), tags: z.array(z.string().regex(/^[a-z0-9-]{1,60}$/)).max(20).default([]), reason: z.string().trim().min(1).max(2000) }).strict() },
+  { id: "knowledge.get", method: "GET", path: "/companies/{company}/knowledge/{document}", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read one company knowledge document and its current revision.", params: companyOnly.extend({ document: schemas.knowledgeId }).strict() },
+  { id: "knowledge.history", method: "GET", path: "/companies/{company}/knowledge/{document}/history", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the edit history of a company knowledge document.", params: companyOnly.extend({ document: schemas.knowledgeId }).strict(),
+    query: z.object({ offset: z.coerce.number().int().min(0).max(100000).optional() }).strict() },
+  { id: "knowledge.edit", method: "PUT", path: "/companies/{company}/knowledge/{document}", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Edit an existing company knowledge document with the expected revision and a reason. Affects every environment and later runs.",
+    params: companyOnly.extend({ document: schemas.knowledgeId }).strict(),
+    body: z.object({ revision: z.number().int().positive(), content: z.string().trim().min(1).max(1_000_000), status: z.enum(["active", "retired"]), reason: z.string().trim().min(1).max(2000) }).strict() },
+  { id: "messenger.installations.list", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/installations", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "List Messenger installations in this environment. Signing keys are never returned.", params: companyEnv },
+  { id: "messenger.installations.create", destructive: false, method: "POST", path: "/companies/{company}/environments/{environment}/messenger/installations", scope: "setup", ownership: "environment", effect: "secret_write", mcp: "handoff", release: "A",
+    summary: "Create an installation with a client-chosen ID. The one-time signing key goes to the trusted local helper, never to model-visible output.",
+    params: companyEnv, body: z.object({ id: uuid.describe("New installation ID chosen by the client, so a retry cannot create a duplicate"), settings: schemas.messengerSettings }).strict() },
+  { id: "messenger.installations.update", destructive: false, method: "PATCH", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Update installation settings with the expected version. Keeps the signing key.",
+    params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ expected_version: z.number().int().min(1), settings: schemas.messengerSettings }).strict() },
+  { id: "messenger.installations.rotate_key", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/rotate-key", scope: "setup", ownership: "environment", effect: "secret_write", mcp: "handoff", release: "A",
+    summary: "Issue a new signing key. Existing signed sessions end. The key goes to the trusted local helper only.",
+    params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ expected_version: z.number().int().min(1) }).strict() },
+  { id: "messenger.assistant.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/assistant", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Read assistant settings per installation and whether the managed runtime is enabled.", params: companyEnv },
+  { id: "messenger.assistant.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/assistant", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit.",
+    params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ revision: z.number().int().positive(), settings: schemas.assistantSettings }).strict() },
+  { id: "company.team.read", method: "GET", path: "/companies/{company}/team", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "D",
+    summary: "List company members and pending invitations. Role changes and invitations stay in Summer.", params: companyOnly },
+  { id: "messenger.conversations.assistant", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/conversations/{conversation}/assistant", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "C",
+    summary: "Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately.",
+    params: companyEnv.extend({ conversation: uuid }).strict(), body: z.object({ paused: z.boolean() }).strict() },
+  { id: "verification.run", method: "POST", path: "/companies/{company}/environments/{environment}/verification", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "A",
+    summary: "Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed.", params: companyEnv,
+    body: z.object({ targets: z.array(z.enum(["credentials", "providers", "slack", "messenger"])).min(1).max(4) }).strict() },
+
+  // Release B: company-owned operational data.
+  { id: "cases.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "List company-owned cases or conversations, newest first, with coverage and a cursor. Text search is not available through the API yet.", params: companyEnv,
+    query: page.extend({ status: z.enum(["open", "resolved", "all"]).optional() }).strict() },
+  { id: "cases.get", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Read one case or conversation with its original messages and related records.", params: caseParams,
+    query: z.object({ after: z.coerce.number().int().min(0).optional() }).strict() },
+  { id: "cases.attachment", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/attachments/{attachment}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Get a short-lived download for an attachment that belongs to this case.", params: caseParams.extend({ attachment: uuid }).strict() },
+  { id: "investigations.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Read investigation runs, saved plans, approval state and execution receipts for a case.", params: caseParams },
+  { id: "investigations.request", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "investigations.request", ownership: "environment", effect: "request", mcp: "full", release: "B",
+    summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval.", params: caseParams,
+    body: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("investigate") }).strict(),
+      z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: z.string().trim().min(1).max(2000) }).strict(),
+    ]) },
+
+  // Release C: exact approved execution through the existing boundary.
+  { id: "actions.prepare", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/actions/prepare", scope: "actions.prepare", ownership: "environment", effect: "request", mcp: "full", release: "C",
+    summary: "Prepare the exact work in the current saved plan for human approval in Summer. Does not approve or execute.", params: caseParams,
+    body: z.object({ plan_request_id: uuid }).strict() },
+
+  // Release D: automation.
+  { id: "events.list", method: "GET", path: "/companies/{company}/environments/{environment}/events", scope: "setup", alsoScope: "events.read", ownership: "environment", effect: "read", mcp: "full", release: "D",
+    summary: "Read configuration and activity events after a cursor. Resume from next_cursor.", params: companyEnv,
+    query: z.object({ after: z.string().regex(/^\d{1,18}$/).optional(), limit: z.coerce.number().int().min(1).max(200).optional() }).strict() },
+  { id: "service_accounts.list", method: "GET", path: "/companies/{company}/service-accounts", scope: "automation.manage", ownership: "company", effect: "read", mcp: "full", release: "D",
+    summary: "List the company's service accounts.", params: companyOnly },
+  { id: "service_accounts.save", method: "PUT", path: "/companies/{company}/service-accounts/{account}", scope: "automation.manage", ownership: "company", effect: "secret_write", mcp: "handoff", release: "D",
+    summary: "Create, update, rotate or disable a service account. A new secret goes to the trusted local helper only.",
+    params: companyOnly.extend({ account: uuid }).strict(),
+    body: z.object({ name: z.string().trim().min(1).max(80), environments: z.array(schemas.environment).min(1).max(2), scopes: z.array(z.enum(SERVICE_SCOPES)).min(1).max(2),
+      expected_version: schemas.version, rotate_secret: z.boolean().default(false), disable: z.boolean().default(false) }).strict() },
+  { id: "webhooks.list", method: "GET", path: "/companies/{company}/environments/{environment}/webhooks", scope: "automation.manage", ownership: "environment", effect: "read", mcp: "full", release: "D",
+    summary: "List webhook endpoints and delivery state.", params: companyEnv },
+  { id: "webhooks.save", method: "PUT", path: "/companies/{company}/environments/{environment}/webhooks/{webhook}", scope: "automation.manage", ownership: "environment", effect: "secret_write", mcp: "handoff", release: "D",
+    summary: "Create, update, rotate or disable a signed webhook endpoint. A new signing secret goes to the trusted local helper only.",
+    params: companyEnv.extend({ webhook: uuid }).strict(),
+    body: z.object({ url: z.string().url().max(512), event_types: z.array(z.string().regex(/^(\*|[a-z][a-z0-9_.]{2,80})$/)).min(1).max(32),
+      expected_version: schemas.version, rotate_secret: z.boolean().default(false), disable: z.boolean().default(false) }).strict() },
+  { id: "webhooks.replay", method: "POST", path: "/companies/{company}/environments/{environment}/webhooks/{webhook}/replay", scope: "automation.manage", ownership: "environment", effect: "request", mcp: "full", release: "D",
+    summary: "Queue past events after a cursor for delivery again to one endpoint. Receivers deduplicate by event ID.",
+    params: companyEnv.extend({ webhook: uuid }).strict(), body: z.object({ after: z.string().regex(/^\d{1,18}$/), limit: z.number().int().min(1).max(1000).default(200) }).strict() },
+];
+
+export const operationById = new Map(OPERATIONS.map(op => [op.id, op]));
+
+/** Match "/companies/abc/..." to an operation and its raw path parameters. */
+export function matchOperation(method: string, path: string): { op: Operation; params: Record<string, string> } | { allowed: string[] } | null {
+  const parts = path.split("/").filter(Boolean);
+  const allowed: string[] = [];
+  for (const op of OPERATIONS) {
+    const template = op.path.split("/").filter(Boolean);
+    if (template.length !== parts.length) continue;
+    const params: Record<string, string> = {};
+    let ok = true;
+    for (let i = 0; i < template.length && ok; i++) {
+      const t = template[i];
+      if (t.startsWith("{")) {
+        try { params[t.slice(1, -1)] = decodeURIComponent(parts[i]); }
+        catch { ok = false; }
+      }
+      else ok = t === parts[i];
+    }
+    if (!ok) continue;
+    if (op.method === method) return { op, params };
+    allowed.push(op.method);
+  }
+  return allowed.length ? { allowed } : null;
+}
+
+/** Operations whose success response carries a one-time secret for the local helper. */
+export const ISSUES_SECRET = new Set(["messenger.installations.create", "messenger.installations.rotate_key", "service_accounts.save", "webhooks.save"]);
+/** Whether this exact request issues a secret: creation, rotation, never disable or plain updates. */
+export function issuesSecret(op: Operation, input: Record<string, unknown>) {
+  if (op.id === "service_accounts.save" || op.id === "webhooks.save") return input.disable !== true && (input.expected_version === 0 || input.rotate_secret === true);
+  return ISSUES_SECRET.has(op.id);
+}
+
+/** MCP tool name for an operation: "credentials.set" -> "summer_credentials_set". */
+export const toolName = (op: Operation) => "summer_" + op.id.replace(/\./g, "_");

@@ -1,0 +1,24 @@
+{
+  "name": "@gosummerai/mcp",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Summer's MCP transport and tool contract for telehealth support.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://gosummer.ai/docs/mcp-clients",
+  "repository": { "type": "git", "url": "https://github.com/compound-technologies/summer-mcp.git" },
+  "bugs": { "url": "https://github.com/compound-technologies/summer-mcp/issues" },
+  "engines": { "node": ">=22.18" },
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "demo": "node --experimental-strip-types examples/demo-backend/server.mjs",
+    "docs": "node --experimental-strip-types scripts/tool-reference.mjs",
+    "docs:check": "node --experimental-strip-types scripts/tool-reference.mjs --check",
+    "check": "npm run typecheck && npm test && npm run build && npm run docs:check"
+  },
+  "dependencies": { "@modelcontextprotocol/server": "2.3.1", "zod": "4.6.5" },
+  "devDependencies": { "@modelcontextprotocol/client": "2.3.1", "@types/node": "24.19.2", "typescript": "5.9.3" }
+}
