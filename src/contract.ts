@@ -1,8 +1,10 @@
+import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
 // Summer developer contract: scopes, operations, ownership and error codes.
 // The API router, MCP tools, OpenAPI document and CLI help are derived from
 // this one catalog, so the three transports cannot drift apart silently.
 // This is Summer's contract. It shares no authority with customer-system integrations.
 import { z } from "zod";
+import { messengerPresentationSchema } from "./schemas/messenger.ts";
 import { capabilityDefinition, capabilityPath, capabilityResult } from "./schemas/capabilities.ts";
 import { guideId, saveGuideInput, saveArticleInput, publishGuideInput, unpublishGuideInput, createAssetInput, editAssetInput, saveHostingInput, verifyHostingInput } from "./schemas/guides.ts";
 
@@ -106,11 +108,14 @@ export const schemas = {
   messengerSettings: z.object({
     enabled: z.boolean().describe("Live widget. The approved setup grant includes production installation and activation."),
     guests_enabled: z.boolean(),
-    display_name: z.string().trim().min(1).max(80),
+    display_name: z.string().trim().min(1).max(80).describe("Company name shown in the Messenger header"),
+    logo_url: messengerLogoSchema.optional().describe("Public company logo shown in the header"),
+    identity: messengerIdentitySchema.optional().describe("Agent name and AI disclosure. Defaults to named support with a neutral first name and last initial."),
     allowed_origins: z.array(z.string().max(256)).min(1).max(20).describe("Exact website origins, https (http://localhost allowed in staging)"),
     privacy_url: z.string().max(512),
     fallback_url: z.string().max(512),
     office_hours: z.string().max(200),
+    presentation: messengerPresentationSchema.optional().describe("Company chat colors, welcome and chat copy, home/chat links and contact form labels. Plain text only; links use HTTPS. Scoped to this installation."),
     routing: z.object({
       clinician_url: z.string().max(512).optional(), sign_in_url: z.string().max(512).optional(), catalog_url: z.string().max(512).optional(),
       offer_url: z.string().max(512).optional(), offer_label: z.string().max(80).optional(), destination_origins: z.array(z.string().max(256)).max(10).optional(),
@@ -280,6 +285,10 @@ export const OPERATIONS: Operation[] = [
     params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ expected_version: z.number().int().min(1) }).strict() },
   { id: "messenger.assistant.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/assistant", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
     summary: "Read assistant settings per installation and whether the managed runtime is enabled.", params: companyEnv },
+  { id: "messenger.leads.list", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/leads", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Read consented website leads for this company and environment. Includes volunteered contact details and original submission references.", params: companyEnv, query: z.object({ before: z.string().max(120).optional() }).strict() },
+  { id: "messenger.leads.handoff", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/leads/handoff", scope: "cases.read", ownership: "environment", effect: "read", mcp: "none", release: "B",
+    summary: "Exchange a short-lived booking handoff code on your server. Returns only this company's submitted contact details. Never use it as account identity.", params: companyEnv, body: z.object({ code: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict() },
   { id: "messenger.assistant.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/assistant", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
     summary: "Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit.",
     params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ revision: z.number().int().positive(), settings: schemas.assistantSettings }).strict() },

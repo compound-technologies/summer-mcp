@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { messengerPresentationSchema } from '../src/schemas/messenger.ts';
+import { operationById } from '../src/contract.ts';
+test('presentation defaults are company neutral and include no automatic links', () => {
+ const value=messengerPresentationSchema.parse({});
+ assert.ok(value.actions.every(action=>action.type!=='link'));assert.ok(!JSON.stringify(value).includes('Summer'));
+ assert.equal(messengerPresentationSchema.parse({actions:[]}).actions.length,0);
+ assert.equal(value.lead_capture.follow_up_url,'');assert.equal(value.lead_capture.phone_required,false);
+});
+test('welcome links reject active schemes, credentials and secret query parameters', () => {
+ for(const url of ['javascript:alert(1)','http://example.test','https://user:password@example.test','https://example.test/?token=private'])
+  assert.equal(messengerPresentationSchema.safeParse({actions:[{type:'link',label:'Book',url,show_on_home:true,show_in_chat:true}]}).success,false);
+ assert.equal(messengerPresentationSchema.safeParse({actions:[{type:'link',label:'Book',url:'https://example.test/book',show_on_home:true,show_in_chat:true}]}).success,true);
+});
+test('required fields must appear and custom contact labels round trip through the API schema', () => {
+ assert.equal(messengerPresentationSchema.safeParse({lead_capture:{phone_required:true,show_phone:false}}).success,false);
+ const settings={enabled:true,guests_enabled:true,display_name:'Acme',allowed_origins:['https://acme.test'],privacy_url:'',fallback_url:'',office_hours:'',presentation:{welcome_title:'Welcome to Acme',lead_capture:{show_phone:true,phone_required:true,email_label:'Work email'}}};
+ const op=operationById.get('messenger.installations.update');
+ const value=op.body.parse({expected_version:1,settings});
+ assert.equal(value.settings.presentation.welcome_title,'Welcome to Acme');assert.equal(value.settings.presentation.lead_capture.email_label,'Work email');
+ assert.equal(operationById.get('messenger.leads.list').scope,'cases.read');assert.equal(operationById.get('messenger.leads.handoff').mcp,'none');
+});
+
+test('company colors accept only hex values through the shared API and MCP contract', () => {
+ const defaults=messengerPresentationSchema.parse({});assert.deepEqual(defaults.colors,{accent:'#a95424',customer_bubble:'#eef1e7'});
+ const colors={accent:'#2457C5',customer_bubble:'#12224A'};
+ assert.deepEqual(messengerPresentationSchema.parse({colors}).colors,{accent:'#2457c5',customer_bubble:'#12224a'});
+ for(const accent of ['red','#abc','#123456\n','#12345678','url(https://example.test)',';color:red','#abcxyz'])assert.equal(messengerPresentationSchema.safeParse({colors:{accent}}).success,false);
+ const settings={enabled:true,guests_enabled:true,display_name:'Example',allowed_origins:['https://example.test'],privacy_url:'',fallback_url:'',office_hours:'',presentation:{colors}};
+ const saved=operationById.get('messenger.installations.update').body.parse({expected_version:1,settings});assert.equal(saved.settings.presentation.colors.accent,'#2457c5');
+});

@@ -50,6 +50,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_installations_update` | setup | Update installation settings with the expected version. Keeps the signing key. |
 | `summer_messenger_installations_rotate_key` | setup | Issue a new signing key. Existing signed sessions end. The key goes to the trusted local helper only. Secret transfer uses a local CLI handoff. |
 | `summer_messenger_assistant_read` | setup | Read assistant settings per installation and whether the managed runtime is enabled. |
+| `summer_messenger_leads_list` | cases.read | Read consented website leads for this company and environment. Includes volunteered contact details and original submission references. |
 | `summer_messenger_assistant_update` | setup | Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit. |
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |

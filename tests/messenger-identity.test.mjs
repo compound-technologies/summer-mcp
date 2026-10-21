@@ -1,0 +1,12 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { schemas } from "../src/contract.ts";
+import { messengerIdentitySchema, messengerAgentName, messengerLogoSchema } from "../src/schemas/messenger-identity.ts";
+test("the shared settings contract defaults to named support and accepts explicit AI or custom names", () => {
+ assert.equal(messengerAgentName(),"Alex M.");assert.equal(messengerAgentName({name_style:"female"}),"Emma R.");
+ assert.equal(messengerAgentName({mode:"ai"}),"Summer");assert.equal(messengerAgentName({custom_name:" Jamie L. "}),"Jamie L.");
+ const settings={enabled:true,guests_enabled:true,display_name:"Example Care",allowed_origins:["https://example.test"],privacy_url:"",fallback_url:"",office_hours:"",logo_url:"https://example.test/logo.png",identity:{mode:"ai",custom_name:"Atlas"}};
+ assert.equal(schemas.messengerSettings.parse(settings).identity.custom_name,"Atlas");
+ for(const value of [{mode:"robot"},{custom_name:"Bad\nName"},{name_style:"male"}])assert.equal(messengerIdentitySchema.safeParse(value).success,false);
+ for(const value of ["javascript:alert(1)","https://user:secret@example.test/logo.png","http://example.test/logo.png","https://example.test/logo.png?token=secret"])assert.equal(messengerLogoSchema.safeParse(value).success,false);
+});
