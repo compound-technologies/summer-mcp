@@ -128,6 +128,14 @@ export const schemas = {
     escalation_enabled: z.boolean().optional().describe("Allow investigation handoffs. Set false for a product and sales chat."),
     budget_cents: z.number().int().min(1).max(10000).describe("Cannot exceed the current limit through the API"),
   }).strict(),
+  voiceSettings: z.object({
+    enabled: z.boolean().describe("Show the voice button in chat for the chosen audience."),
+    audience: z.enum(["accounts", "signed_in", "everyone"]).describe("accounts: only allowed_subjects; signed_in: any verified account; everyone: visitors too."),
+    allowed_subjects: z.array(z.string().trim().min(1).max(200)).max(50).describe("Verified account subjects your site sends at sign-in. Used when audience is accounts."),
+    voice_id: z.string().regex(/^[A-Za-z0-9]{8,40}$/).describe("One of the voices listed by messenger.voice.read."),
+    instructions: z.string().max(20000).describe("Optional company instructions added to the standard voice instructions."),
+    vocabulary: z.array(z.string().trim().min(1).max(60)).max(100).describe("Words speech recognition should expect, such as product names."),
+  }).strict(),
 };
 
 export type Ownership = "user" | "company" | "environment";
@@ -292,6 +300,11 @@ export const OPERATIONS: Operation[] = [
   { id: "messenger.assistant.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/assistant", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
     summary: "Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit.",
     params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ revision: z.number().int().positive(), settings: schemas.assistantSettings }).strict() },
+  { id: "messenger.voice.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/voice", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Read voice chat settings per installation, the available voices, published help article count and the voice assistant's update status.", params: companyEnv },
+  { id: "messenger.voice.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/voice", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Update voice chat settings with the expected revision. Summer updates the voice assistant from these settings and the company's published help articles.",
+    params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ revision: z.number().int().min(0), settings: schemas.voiceSettings }).strict() },
   { id: "company.team.read", method: "GET", path: "/companies/{company}/team", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "D",
     summary: "List company members and pending invitations. Role changes and invitations stay in Summer.", params: companyOnly },
   { id: "messenger.conversations.assistant", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/conversations/{conversation}/assistant", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "C",
