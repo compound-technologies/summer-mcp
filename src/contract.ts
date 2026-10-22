@@ -7,6 +7,7 @@ import { z } from "zod";
 import { messengerPresentationSchema } from "./schemas/messenger.ts";
 import { capabilityDefinition, capabilityPath, capabilityResult } from "./schemas/capabilities.ts";
 import { guideId, saveGuideInput, saveArticleInput, publishGuideInput, unpublishGuideInput, createAssetInput, editAssetInput, saveHostingInput, verifyHostingInput } from "./schemas/guides.ts";
+import { WORKSPACE_OPERATIONS, caseListQuery } from "./workspace-operations.ts";
 
 export const API_VERSION = "2026-10-20";
 export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"] as const;
@@ -30,6 +31,11 @@ export const SCOPES = {
   "actions.prepare": {
     title: "Prepare actions for approval",
     description: "Prepare the exact work in a saved plan so a person can approve it in Summer. Never approves or executes anything.",
+    admin: false,
+  },
+  "workspace.write": {
+    title: "Manage workspace work",
+    description: "Save your inbox views, assign case work and record evidence-backed quality assessments. Shared views and scenario changes retain the company's existing administrator checks. Never grants roles or approves customer actions or privacy requests.",
     admin: false,
   },
   "credentials.replace": {
@@ -57,7 +63,8 @@ export const SCOPES = {
   "capabilities.read": { title: "Read capabilities", description: "Read company capabilities and setup status.", admin: false },
 } as const;
 export type Scope = keyof typeof SCOPES;
-export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
+export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "workspace.write", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
+export const DEFAULT_DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare"] as const satisfies readonly Scope[];
 export const SERVICE_SCOPES = ["events.read", "capabilities.read"] as const satisfies readonly Scope[];
 export const ENVIRONMENTS = ["staging", "production"] as const;
 export type Environment = (typeof ENVIRONMENTS)[number];
@@ -108,6 +115,9 @@ export const schemas = {
   messengerSettings: z.object({
     enabled: z.boolean().describe("Live widget. The approved setup grant includes production installation and activation."),
     guests_enabled: z.boolean(),
+    guest_attachments_enabled: z.boolean().optional(),
+    guest_daily_conversation_limit: z.number().int().min(1).max(1000).optional(),
+    guest_challenge_hourly: z.number().int().min(1).max(10000).optional(),
     display_name: z.string().trim().min(1).max(80).describe("Company name shown in the Messenger header"),
     logo_url: messengerLogoSchema.optional().describe("Public company logo shown in the header"),
     identity: messengerIdentitySchema.optional().describe("Agent name and AI disclosure. Defaults to named support with a neutral first name and last initial."),
@@ -127,6 +137,8 @@ export const schemas = {
     lead_capture_enabled: z.boolean().optional().describe("Offer an optional consent-based contact form in chat."),
     escalation_enabled: z.boolean().optional().describe("Allow investigation handoffs. Set false for a product and sales chat."),
     budget_cents: z.number().int().min(1).max(10000).describe("Cannot exceed the current limit through the API"),
+    daily_budget_cents: z.number().int().min(100).max(1000000).optional().describe("Daily spending limit. Delegated clients may keep or reduce the saved limit."),
+    max_concurrent_chats: z.number().int().min(1).max(200).optional(),
   }).strict(),
   voiceSettings: z.object({
     enabled: z.boolean().describe("Show the voice button in chat for the chosen audience."),
@@ -194,7 +206,11 @@ const runsQuery = z.object({
 }).strict();
 
 export const OPERATIONS: Operation[] = [
+  ...WORKSPACE_OPERATIONS,
   // Account: any connection, including a person whose access is pending.
+  { id: "client.status", method: "GET", path: "/client-status", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
+    summary: "Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Supply the versions and last successful check cached by your client; omitted values are unknown.",
+    query: z.object({ cli_version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(), mcp_version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(), last_checked_at: instant.optional() }).strict() },
   { id: "account.me", method: "GET", path: "/me", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
     summary: "Show the signed-in person, Summer access status and this connection's grant." },
   { id: "account.companies.list", method: "GET", path: "/companies", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
@@ -363,8 +379,8 @@ export const OPERATIONS: Operation[] = [
 
   // Release B: company-owned operational data.
   { id: "cases.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "List company-owned cases or conversations, newest first, with coverage and a cursor. To find a customer or case, use cases.search.", params: companyEnv,
-    query: page.extend({ status: z.enum(["open", "resolved", "all"]).optional() }).strict() },
+    summary: "List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Ops filters match the workspace; Messenger-only companies use inbox filters through messenger.conversations.list.", params: companyEnv,
+    query: caseListQuery },
   { id: "cases.search", method: "GET", path: "/companies/{company}/environments/{environment}/cases/search", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act.", params: companyEnv,
     query: caseSearchQuery },

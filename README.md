@@ -241,3 +241,27 @@ This repository publishes source on GitHub. It does not currently publish `@gosu
 Summer maintains this package in its private development repository and exports reviewed files here after passing release checks. This repository has clean public history; it does not include private application history.
 
 Issues and pull requests are welcome. Accepted changes are integrated into the source repository, tested with Summer and then exported here. See [CONTRIBUTING.md](CONTRIBUTING.md). The code is available under the [MIT license](LICENSE).
+
+### Client freshness
+
+Normal tool calls return their original business data plus
+`_meta["ai.gosummer/client-status"]`. Update and refresh warnings also appear as
+additional text content, so the agent sees them without a separate status call.
+These advisories never turn a successful call into an error or repeat an effect.
+Clients may report `cli_version`, cached `mcp_version` and `last_checked_at` in
+request `_meta["ai.gosummer/client"]`, or through `Summer-CLI-Version`,
+`Summer-MCP-Version` and `Summer-Last-Checked-At` headers. Known Summer CLI
+User-Agent versions are recognized too. Missing or malformed diagnostics are
+treated as unknown; they never block the business request. Generic client app
+versions are not compared with the Summer CLI version.
+
+The hosted server reports its live catalog version during initialization. Its
+ordinary responses flag an unknown or week-old check without blocking work. A
+separate diagnostic check is useful after an unknown tool or schema mismatch. Use
+`summer_client_status` with `cli_version`, cached `mcp_version` and
+`last_checked_at` for structured warnings. A stale check does not prove an obsolete
+version. The server cannot inspect local installations or cached tool lists.
+Known old Summer CLI versions also receive a warning in initialization instructions.
+Refresh initialization and `tools/list` when catalog versions differ. Check CLI npm
+releases with `summer version --check --json`. Software updates never grant scopes
+or approve effects; reconnect through normal Summer consent when required.

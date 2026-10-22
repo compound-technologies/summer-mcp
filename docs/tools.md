@@ -4,6 +4,35 @@ Generated from the operation catalog. The hosted deployment and your granted per
 
 | Tool | Required permission | Purpose |
 | --- | --- | --- |
+| `summer_support_policy_read` | cases.read | Read business hours, holidays, response commitments and scheduled policy revisions. |
+| `summer_support_policy_update` | setup | Save business hours and response commitments with the expected revision and an effective date. |
+| `summer_saved_replies_list` | cases.read | Read company saved replies, optionally including retired replies. |
+| `summer_saved_replies_save` | setup | Create, edit, retire or restore a saved reply with its expected revision and reason. Sends nothing. |
+| `summer_saved_replies_history` | cases.read | Read original revisions of a saved reply. |
+| `summer_saved_views_list` | cases.read | Read this person's saved inbox views and shared company views. |
+| `summer_saved_views_save` | workspace.write | Save a personal or shared inbox view. Known case filters are normalized by the same service as the UI. |
+| `summer_saved_views_delete` | workspace.write | Remove an owned inbox view, retaining the database's ownership checks. |
+| `summer_quality_scenarios_list` | cases.read | Read quality scenarios, assessments and current outcomes. |
+| `summer_quality_scenarios_get` | cases.read | Read one scenario and its saved assessments. |
+| `summer_quality_scenarios_save` | setup | Create, revise or retire a quality scenario, with expected revision and reason. |
+| `summer_quality_assessments_save` | workspace.write | Record an evidence-backed assessment or correction. Does not approve a plan or customer action. |
+| `summer_quality_corrections_list` | cases.read | Read evidence-backed corrections to previous quality assessments. |
+| `summer_privacy_requests_list` | setup | Read privacy export/deletion requests, status and original event history. Does not export or delete data. |
+| `summer_privacy_requests_create` | setup | File an export or deletion request for human review. Cannot approve, perform or attest completion of the work. |
+| `summer_work_routing_read` | setup | Read eligible teammates and automatic owner/reviewer routing settings. |
+| `summer_work_routing_update` | setup | Save automatic owner/reviewer routing with the expected version. Does not grant roles or approval authority. |
+| `summer_cases_assignment_read` | cases.read | Read a case's issue owner, plan reviewer and eligible teammates. |
+| `summer_cases_assignment_update` | workspace.write | Assign an issue owner or plan reviewer with the previous owner as a conflict check. Does not grant roles or approve a plan. |
+| `summer_reports_credits` | cases.read | Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone. |
+| `summer_reports_service_metrics` | cases.read | Read current response and resolution metrics in the company timezone. |
+| `summer_reports_delivery` | cases.read | Read delivery attempts, failures and recorded results. Does not retry a delivery. |
+| `summer_reports_commitments` | cases.read | Read outstanding customer promises and unfinished work. |
+| `summer_agent_exclusions_list` | cases.read | Read the company's sender exclusions and original edit history. Changes retain human approval. |
+| `summer_messenger_conversations_list` | cases.read | Search and filter the complete Messenger inbox, including visitor conversations without Ops cases. |
+| `summer_messenger_conversations_get` | cases.read | Read original Messenger messages, contact form details, read receipts and attachments without marking the chat read. |
+| `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice, vocabulary and change history. Starts no call. |
+| `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call. |
+| `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Supply the versions and last successful check cached by your client; omitted values are unknown. |
 | `summer_account_me` | Personal account | Show the signed-in person, Summer access status and this connection's grant. |
 | `summer_account_companies_list` | Personal account | List companies the person can access and whether this connection includes each one. |
 | `summer_account_access_request_read` | Personal account | Read the person's Summer access request. Approval is a separate Summer team decision. |
@@ -63,7 +92,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |
-| `summer_cases_list` | cases.read | List company-owned cases or conversations, newest first, with coverage and a cursor. To find a customer or case, use cases.search. |
+| `summer_cases_list` | cases.read | List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Ops filters match the workspace; Messenger-only companies use inbox filters through messenger.conversations.list. |
 | `summer_cases_search` | cases.read | Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act. |
 | `summer_cases_get` | cases.read | Read one case or conversation with its original messages and related records. |
 | `summer_cases_attachment` | cases.read | Get a short-lived download for an attachment that belongs to this case. |

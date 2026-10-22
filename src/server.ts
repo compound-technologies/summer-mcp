@@ -9,12 +9,15 @@ import { Server, createMcpHandler, isLegacyRequest, isJsonContentType, readReque
   WebStandardStreamableHTTPServerTransport, ProtocolError, ProtocolErrorCode, ResourceNotFoundError, type Tool as McpTool, type CallToolResult } from "@modelcontextprotocol/server";
 import { ApiError, HUMAN_ONLY, issuesSecret, MCP_PROTOCOL_VERSIONS, OPERATIONS, toolName, type Operation } from "./contract.ts";
 import type { McpAdmission, McpBackend, McpConfig } from "./backend.ts";
+import { MCP_VERSION, MINIMUM_CLI_VERSION, CLIENT_STATUS_META, clientStatus, requestClientStatus } from "./client-status.ts";
 
 const SETUP_PROMPT = { name: "summer_setup", title: "Set up Summer in this project", description: "The reviewed agent setup guide, with your company and environment filled in. It uses the local Summer CLI for any step that moves a secret.",
   arguments: [{ name: "company", description: "Summer company ID from this connection", required: false }, { name: "environment", description: "staging (default) or production", required: false }] };
 
-const SERVER = { name: "summer", title: "Summer", version: "0.2.0" };
+const SERVER = { name: "summer", title: "Summer", version: MCP_VERSION };
 const INSTRUCTIONS = `Summer company setup and case tools. Public discovery lists tool schemas only. Every tool call requires a Summer OAuth access token; a 401 response points to the authorization metadata. Start with summer_account_me and summer_company_capabilities.
+
+Version check: this live Summer MCP catalog is ${MCP_VERSION} and needs Summer CLI ${MINIMUM_CLI_VERSION} or newer. Normal tool responses include client-status metadata and readable update warnings alongside the requested data. Continue an otherwise valid request even when the client is old; warnings never require a retry or block work. A last check older than seven days produces an advisory; it does not block the result. No separate version check is required before a normal call. Use summer_client_status with your cached mcp_version, cli_version and last_checked_at for explicit diagnostics, especially after a missing command/tool or schema mismatch. Run summer version --check --json to compare the installed CLI with the published npm release; update an old CLI with npm install -g @gosummerai/cli@latest. Refresh MCP initialization and tools/list after a version change. The hosted server updates centrally; this server cannot inspect your local installation or cached tool list. A stale check is a reminder to verify, not proof that software is obsolete. Missing scopes require normal Summer consent, preserving existing grants; a software update grants no permissions.
 
 Write for the intended reader: customers for public guides and staff for internal procedures. Follow ASD-STE100 about 80%. Use short sentences, active voice, one idea per sentence and consistent terms. Avoid metaphors and technical slang. Keep necessary facts and uncertainty.
 Customize welcome copy, home/chat buttons and lead fields through installation settings.presentation. Website buttons open HTTPS links; lead_capture buttons open the consent form. Read the issuer's /docs/messenger-leads guide. Saved submissions emit messenger.lead.submitted through the existing signed webhooks, including the company and installation IDs. Webhook setup needs automation.manage. Read leads with cases.read. Booking handoff codes expire after 15 minutes and require the selected company's server to exchange them. Never treat contact details as account identity or claim a saved lead is a confirmed booking.
@@ -147,7 +150,7 @@ function browserOrigin(request: Request, config: McpConfig): string | null {
       (LOOPBACK.has(target.hostname) && !local)) throw new InvalidOrigin("This origin is not allowed.");
   return value;
 }
-const CORS_HEADERS = ["authorization", "content-type", "mcp-protocol-version", "mcp-method", "mcp-name", "mcp-session-id", "last-event-id"];
+const CORS_HEADERS = ["authorization", "content-type", "mcp-protocol-version", "mcp-method", "mcp-name", "mcp-session-id", "last-event-id", "summer-cli-version", "summer-mcp-version", "summer-last-checked-at"];
 function finish(response: Response, origin: string | null, requestId: string) {
   const outgoing = new Headers(response.headers);
   outgoing.set("Cache-Control", "private, no-store");
@@ -194,14 +197,22 @@ export async function handleMcp<T extends McpAdmission>(request: Request, config
     // fresh server per request retains stateless hosting and live grant checks.
     let authorizationError: ApiError | undefined;
     const factory = () => {
-      const server = new Server(SERVER, { supportedProtocolVersions: [...MCP_PROTOCOL_VERSIONS], capabilities: { tools: {}, resources: {}, prompts: {} }, instructions: INSTRUCTIONS });
+      const info = message.params?.clientInfo as { name?: unknown; version?: unknown } | undefined;
+      const knownCli = info && ["summer-cli", "@gosummerai/cli"].includes(String(info.name)) && typeof info.version === "string" && /^\d+\.\d+\.\d+$/.test(info.version);
+      const warning = knownCli ? clientStatus({ cli_version: info.version as string }).warnings.find(w => w.code === "cli_outdated") : undefined;
+      const server = new Server(SERVER, { supportedProtocolVersions: [...MCP_PROTOCOL_VERSIONS], capabilities: { tools: {}, resources: {}, prompts: {} }, instructions: (warning ? `WARNING: ${warning.message}\n\n` : "") + INSTRUCTIONS });
       server.setRequestHandler("tools/list", async () => ({ tools: TOOLS.filter(t => !admission || visible(t, admission)).map(describeTool) }));
       server.setRequestHandler("tools/call", async ({ params }) => {
-        try { return await callTool(request, params, config, backend, requestId); }
+        const status = requestClientStatus(request, params);
+        const advisory = (result: CallToolResult): CallToolResult => ({ ...result,
+          _meta: { ...result._meta, [CLIENT_STATUS_META]: status },
+          content: [...result.content, ...status.warnings.map(w => ({ type: "text" as const, text: `Summer update warning (${w.code}): ${w.message}` }))],
+        });
+        try { return advisory(await callTool(request, params, config, backend, requestId)); }
         catch (error) {
           if (!(error instanceof ApiError)) throw error;
           authorizationError = error;
-          return toolError(error, backend);
+          return advisory(toolError(error, backend));
         }
       });
       server.setRequestHandler("resources/list", async () => ({ resources: [] }));
