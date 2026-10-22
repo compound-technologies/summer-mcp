@@ -209,7 +209,7 @@ export const OPERATIONS: Operation[] = [
   ...WORKSPACE_OPERATIONS,
   // Account: any connection, including a person whose access is pending.
   { id: "client.status", method: "GET", path: "/client-status", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
-    summary: "Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Supply the versions and last successful check cached by your client; omitted values are unknown.",
+    summary: "Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status.",
     query: z.object({ cli_version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(), mcp_version: z.string().regex(/^\d+\.\d+\.\d+$/).optional(), last_checked_at: instant.optional() }).strict() },
   { id: "account.me", method: "GET", path: "/me", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
     summary: "Show the signed-in person, Summer access status and this connection's grant." },
@@ -386,7 +386,7 @@ export const OPERATIONS: Operation[] = [
     summary: "List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Operational filters require the company's operational connection; Messenger-only results include coverage limits.", params: companyEnv,
     query: caseListQuery },
   { id: "cases.search", method: "GET", path: "/companies/{company}/environments/{environment}/cases/search", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act.", params: companyEnv,
+    summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Search matches are leads, not proof of identity or completed work.", params: companyEnv,
     query: caseSearchQuery },
   { id: "cases.get", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Read one case or conversation with its original messages and related records.", params: caseParams,
@@ -414,7 +414,7 @@ export const OPERATIONS: Operation[] = [
 
   // Release D: automation.
   { id: "events.list", method: "GET", path: "/companies/{company}/environments/{environment}/events", scope: "setup", alsoScope: "events.read", ownership: "environment", effect: "read", mcp: "full", release: "D",
-    summary: "Read configuration and activity events after a cursor. Resume from next_cursor.", params: companyEnv,
+    summary: "Read configuration and activity events after a cursor. Pagination uses next_cursor.", params: companyEnv,
     query: z.object({ after: z.string().regex(/^\d{1,18}$/).optional(), limit: z.coerce.number().int().min(1).max(200).optional() }).strict() },
   { id: "service_accounts.list", method: "GET", path: "/companies/{company}/service-accounts", scope: "automation.manage", ownership: "company", effect: "read", mcp: "full", release: "D",
     summary: "List the company's service accounts.", params: companyOnly },

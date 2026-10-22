@@ -32,7 +32,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |
 | `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice, vocabulary and change history. Starts no call. |
 | `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call. |
-| `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Supply the versions and last successful check cached by your client; omitted values are unknown. |
+| `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status. |
 | `summer_account_me` | Personal account | Show the signed-in person, Summer access status and this connection's grant. |
 | `summer_account_companies_list` | Personal account | List companies the person can access and whether this connection includes each one. |
 | `summer_account_access_request_read` | Personal account | Read the person's Summer access request. Approval is a separate Summer team decision. |
@@ -94,7 +94,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |
 | `summer_cases_list` | cases.read | List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Operational filters require the company's operational connection; Messenger-only results include coverage limits. |
-| `summer_cases_search` | cases.read | Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act. |
+| `summer_cases_search` | cases.read | Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Search matches are leads, not proof of identity or completed work. |
 | `summer_cases_get` | cases.read | Read one case or conversation with its original messages and related records. |
 | `summer_cases_attachment` | cases.read | Get a short-lived download for an attachment that belongs to this case. |
 | `summer_cases_customer_profile` | cases.read | Read the case customer's profile: name, date of birth, contact details, default shipping and billing addresses, each order's addresses and earlier addresses. A saved address does not prove where an existing order ships. |
@@ -102,7 +102,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_runs_list` | cases.read | List investigation and execution runs across cases, newest first, with status, plan approval and date filters. |
 | `summer_investigations_request` | investigations.request | Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval. |
 | `summer_actions_prepare` | actions.prepare | Prepare the exact work in the current saved plan for human approval in Summer. Does not approve or execute. |
-| `summer_events_list` | setup | Read configuration and activity events after a cursor. Resume from next_cursor. |
+| `summer_events_list` | setup | Read configuration and activity events after a cursor. Pagination uses next_cursor. |
 | `summer_service_accounts_list` | automation.manage | List the company's service accounts. |
 | `summer_service_accounts_save` | automation.manage | Create, update, rotate or disable a service account. A new secret goes to the trusted local helper only. Secret transfer uses a local CLI handoff. |
 | `summer_webhooks_list` | automation.manage | List webhook endpoints and delivery state. |
