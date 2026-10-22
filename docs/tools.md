@@ -66,7 +66,8 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_company_settings_read` | setup | Read company-wide settings. Changes affect every environment. |
 | `summer_company_settings_update` | setup | Update company-wide settings with the expected version. Affects every environment. |
 | `summer_integrations_list` | setup | List provider integrations, their categories, required fields and saved metadata. Filter by search, category or connection. Connected means all required credentials are available, not a live provider check. Never returns values. |
-| `summer_integrations_save` | setup | Define a custom integration's credential names and labels. No secret values. Saving a definition does not establish runtime access; upload secrets through the local CLI and verify an agent-usable path. |
+| `summer_integrations_save` | setup | Save a custom integration's description, setup instructions and credential names. No secret values. Upload secrets through the local CLI, document the agent-usable path in company knowledge and verify it separately. |
+| `summer_integrations_setup_prompt` | setup | Prepare an integration-specific MCP setup prompt and Codex or Claude Code app links. Includes the selected company, environment and setup brief, never credential values. Does not launch an app or change configuration. |
 | `summer_credentials_list` | setup | List saved credential names, sources and versions. Never returns values. |
 | `summer_credentials_set` | setup | Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only. Secret transfer uses a local CLI handoff. |
 | `summer_knowledge_list` | setup | List current company knowledge documents. Knowledge is company-wide, not per environment. |
