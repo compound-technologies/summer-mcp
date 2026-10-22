@@ -31,7 +31,7 @@ export const SCOPES = {
   },
   "actions.prepare": {
     title: "Prepare actions for approval",
-    description: "Prepare the exact work in a saved plan so a person can approve it in Summer. Never approves or executes anything.",
+    description: "Prepare the exact work and review hash for approval in Summer or through an authorized delegated connection. Preparation never approves or executes anything.",
     admin: false,
   },
   "actions.approve": {
@@ -70,7 +70,7 @@ export const SCOPES = {
 } as const;
 export type Scope = keyof typeof SCOPES;
 export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "actions.approve", "workspace.write", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
-export const DEFAULT_DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare"] as const satisfies readonly Scope[];
+export const DEFAULT_DELEGATED_SCOPES = DELEGATED_SCOPES;
 export const SERVICE_SCOPES = ["events.read", "capabilities.read"] as const satisfies readonly Scope[];
 export const ENVIRONMENTS = ["staging", "production"] as const;
 export type Environment = (typeof ENVIRONMENTS)[number];

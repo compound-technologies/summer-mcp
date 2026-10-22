@@ -1,6 +1,6 @@
 {
   "name": "@gosummerai/mcp",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "Summer's MCP transport and tool contract for telehealth support.",
   "type": "module",

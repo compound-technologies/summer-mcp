@@ -85,6 +85,8 @@ Have another tool in your stack? Start with the [custom integration guide](https
 
 Case investigations require the relevant permissions and an enabled operational connection. Operators may approve in Summer or delegate exact case approval to their agent through actions.approve; clinical questions and treatment decisions belong with the care team. Confirm current capabilities for your company before rollout.
 
+New operator connections request every supported delegated permission by default. The consent screen lets you narrow that selection. Existing connections retain their chosen permissions across updates.
+
 ## Connect your AI assistant
 
 Use hosted Summer without cloning this repository or running a server.

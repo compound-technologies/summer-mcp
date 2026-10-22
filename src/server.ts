@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { Server, createMcpHandler, isLegacyRequest, isJsonContentType, readRequestBody,
   WebStandardStreamableHTTPServerTransport, ProtocolError, ProtocolErrorCode, ResourceNotFoundError, type Tool as McpTool, type CallToolResult } from "@modelcontextprotocol/server";
-import { ApiError, HUMAN_ONLY, issuesSecret, MCP_PROTOCOL_VERSIONS, OPERATIONS, toolName, type Operation } from "./contract.ts";
+import { ApiError, DEFAULT_DELEGATED_SCOPES, HUMAN_ONLY, issuesSecret, MCP_PROTOCOL_VERSIONS, OPERATIONS, toolName, type Operation } from "./contract.ts";
 import type { McpAdmission, McpBackend, McpConfig } from "./backend.ts";
 import { MCP_VERSION, MINIMUM_CLI_VERSION, CLIENT_STATUS_META, clientStatus, requestClientStatus } from "./client-status.ts";
 
@@ -248,7 +248,10 @@ export async function handleMcp<T extends McpAdmission>(request: Request, config
     if (authorizationError) return done(backend.errorResponse(authorizationError, requestId));
     return done(response);
   } catch (error) {
-    if (backend.isAuthenticationRequired(error)) return done(Response.json({ error: "invalid_token", error_description: error instanceof Error ? error.message : "Provide a valid Summer access token." }, { status: 401, headers: { "WWW-Authenticate": backend.authenticateHeader() + (requiredScope ? `, scope="${requiredScope}"` : "") } }));
+    if (backend.isAuthenticationRequired(error)) {
+      const scopes = request.headers.has("authorization") ? requiredScope : DEFAULT_DELEGATED_SCOPES.join(" ");
+      return done(Response.json({ error: "invalid_token", error_description: error instanceof Error ? error.message : "Provide a valid Summer access token." }, { status: 401, headers: { "WWW-Authenticate": backend.authenticateHeader() + (scopes ? `, scope="${scopes}"` : "") } }));
+    }
     if (error instanceof InvalidOrigin) return done(Response.json({ error: error.message }, { status: 403 }));
     return done(Response.json(rpcError(null, -32603, "Summer could not process the request."), { status: 500 }));
   }

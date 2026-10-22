@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { handleMcp, TOOLS, MCP_PROTOCOL_VERSIONS, ApiError } from '../src/index.ts';
+import { DEFAULT_DELEGATED_SCOPES } from '../src/contract.ts';
 import { demoBackend, demoConfig, company, caseId } from '../examples/demo-backend/backend.mjs';
 const request = (method, params = {}, headers = {}) => new Request(demoConfig.apiOrigin + '/mcp', {
   method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', ...headers },
@@ -47,6 +48,9 @@ test('tool calls and rendered prompts require admission', async () => {
   for (const [method, params] of [['tools/call', { name: 'summer_account_me' }], ['prompts/get', { name: 'summer_setup' }]]) {
     assert.equal((await handleMcp(request(method, params), demoConfig, demoBackend())).status, 401);
   }
+  const initial = await handleMcp(request('tools/call', { name: 'summer_cases_get', arguments: { company, environment: 'staging', case: caseId } }), demoConfig, demoBackend());
+  assert.equal(initial.status, 401);
+  assert.ok(initial.headers.get('www-authenticate').includes(`scope="${DEFAULT_DELEGATED_SCOPES.join(' ')}"`));
   const cases = await handleMcp(request('tools/call', { name: 'summer_cases_get', arguments: { company, environment: 'staging', case: caseId } }, authenticated), demoConfig, demoBackend());
   assert.equal((await cases.json()).result.structuredContent.case.demo, true);
 });
