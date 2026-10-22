@@ -35,7 +35,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
   { ...read("support.policy.read", `${companyPath}/support-policy`, "Read business hours, holidays, response commitments and scheduled policy revisions."), scope: "cases.read", alsoScope: "setup" },
   write("support.policy.update", `${companyPath}/support-policy`, "Save business hours and response commitments with the expected revision and an effective date.", policyInput),
   { ...read("saved_replies.list", `${companyPath}/saved-replies`, "Read company saved replies, optionally including retired replies."), scope: "cases.read", alsoScope: "setup", query: z.object({ retired: yesNo.optional() }).strict() },
-  write("saved_replies.save", `${companyPath}/saved-replies`, "Create, edit, retire or restore a saved reply with its expected revision and reason. Sends nothing.", savedReplyInput),
+  write("saved_replies.save", `${companyPath}/saved-replies`, "Create, edit, retire or restore a saved reply with its expected revision and reason. Sends nothing. API reference: https://api.gosummer.ai/v1/openapi.json", savedReplyInput),
   { ...read("saved_replies.history", `${companyPath}/saved-replies/{reply}/history`, "Read original revisions of a saved reply."), params: company.extend({ reply: uuid }).strict(), scope: "cases.read", alsoScope: "setup" },
   { ...read("saved_views.list", `${companyPath}/saved-views`, "Read this person's saved inbox views and shared company views.", company, "cases.read"), alsoScope: "setup" },
   { ...write("saved_views.save", `${companyPath}/saved-views`, "Save a personal or shared inbox view. Known case filters are normalized by the same service as the UI.", viewSaveInput), scope: "workspace.write", alsoScope: "setup" },

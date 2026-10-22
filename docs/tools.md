@@ -7,7 +7,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_support_policy_read` | cases.read | Read business hours, holidays, response commitments and scheduled policy revisions. |
 | `summer_support_policy_update` | setup | Save business hours and response commitments with the expected revision and an effective date. |
 | `summer_saved_replies_list` | cases.read | Read company saved replies, optionally including retired replies. |
-| `summer_saved_replies_save` | setup | Create, edit, retire or restore a saved reply with its expected revision and reason. Sends nothing. |
+| `summer_saved_replies_save` | setup | Create, edit, retire or restore a saved reply with its expected revision and reason. Sends nothing. API reference: https://api.gosummer.ai/v1/openapi.json |
 | `summer_saved_replies_history` | cases.read | Read original revisions of a saved reply. |
 | `summer_saved_views_list` | cases.read | Read this person's saved inbox views and shared company views. |
 | `summer_saved_views_save` | workspace.write | Save a personal or shared inbox view. Known case filters are normalized by the same service as the UI. |
@@ -44,7 +44,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_guides_articles_get` | setup | Read an editable guide article and its current knowledge revision. |
 | `summer_guides_articles_save` | setup | Create or edit a Markdown customer article with source references and managed asset IDs. Saves a draft in the shared knowledge library; later edits do not change a published release. |
 | `summer_guides_preview` | setup | Read the exact current draft, article revisions and authenticated preview URL before publishing. No public access token is issued. |
-| `summer_guides_authoring` | setup | Get the reviewed company-specific guide-building instructions for your native coding agent. It uses its own authorized writing, screenshot, image and video tools, then Summer's upload and publication APIs. No model run or customer effect starts from this read. |
+| `summer_guides_authoring` | setup | Read the company's reviewed guide-authoring brief, draft article references and publication state. This read starts no model run and changes no customer data. |
 | `summer_guides_publish` | guides.publish | Publish the exact selected article revisions and ready media to the company's customer help center. Requires explicit publication authority; does not approve customer business actions. |
 | `summer_guides_unpublish` | guides.publish | Remove the company's guide and release media from Summer's public serving path at the expected version. Downloaded copies cannot be recalled. |
 | `summer_guides_history` | setup | Read the company's guide edits, upload and publication history. |
@@ -53,7 +53,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_guides_hosting_verify` | guides.publish | Check the saved domain's DNS ownership, attach it through Summer's hosting connection and verify HTTPS. Returns pending until each check succeeds. |
 | `summer_assets_list` | setup | List the company's private guide media, metadata and upload status. Uploading does not make a file public. |
 | `summer_assets_get` | setup | Read one guide asset, checksum and resumable chunk receipts. No secret upload capability is returned. |
-| `summer_assets_uploads_create` | setup | Start or recover a private resumable Markdown, image, video, PDF or caption upload from metadata. Transfer file bytes with the trusted local Summer CLI; the hosted MCP server cannot read local paths. |
+| `summer_assets_uploads_create` | setup | Start or recover a private resumable Markdown, image, video, PDF or caption upload from metadata. File bytes are transferred separately; this hosted endpoint has no local filesystem access. |
 | `summer_assets_uploads_complete` | setup | Verify the original size, content signature and SHA-256 against saved private bytes, then mark a guide upload ready. A ready file remains private until published in a guide. |
 | `summer_assets_edit` | setup | Edit guide media captions, alt text, provenance, transcript or poster at the expected version, or retire unused media. Published releases keep their pinned metadata. |
 | `summer_company_capabilities` | setup | What this connection can do here, with a reason for everything unavailable. |
@@ -66,12 +66,12 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_company_settings_read` | setup | Read company-wide settings. Changes affect every environment. |
 | `summer_company_settings_update` | setup | Update company-wide settings with the expected version. Affects every environment. |
 | `summer_integrations_list` | setup | List provider integrations, their categories, required fields and saved metadata. Filter by search, category or connection. Connected means all required credentials are available, not a live provider check. Never returns values. |
-| `summer_integrations_save` | setup | Save a custom integration's description, setup instructions and credential names. No secret values. Upload secrets through the local CLI, document the agent-usable path in company knowledge and verify it separately. |
+| `summer_integrations_save` | setup | Save a custom integration's description, setup instructions and credential field names. This saves metadata only, without credential values or a live connection check. |
 | `summer_integrations_setup_prompt` | setup | Prepare an integration-specific MCP setup prompt and Codex or Claude Code app links. Includes the selected company, environment and setup brief, never credential values. Does not launch an app or change configuration. |
 | `summer_credentials_list` | setup | List saved credential names, sources and versions. Never returns values. |
 | `summer_credentials_set` | setup | Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only. Secret transfer uses a local CLI handoff. |
 | `summer_knowledge_list` | setup | List current company knowledge documents. Knowledge is company-wide, not per environment. |
-| `summer_knowledge_create` | setup | Upload a new company knowledge document with original revision history. The shared company library is used by all roles and environments. An existing document must be read and edited instead. |
+| `summer_knowledge_create` | setup | Upload a new company knowledge document with original revision history. The shared library is used by all roles and environments. Existing document IDs are refused. API reference: https://api.gosummer.ai/v1/openapi.json |
 | `summer_knowledge_get` | setup | Read one company knowledge document and its current revision. |
 | `summer_knowledge_history` | setup | Read the edit history of a company knowledge document. |
 | `summer_knowledge_edit` | setup | Edit an existing company knowledge document with the expected revision and a reason. Affects every environment and later runs. |
@@ -93,13 +93,13 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |
-| `summer_cases_list` | cases.read | List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Ops filters match the workspace; Messenger-only companies use inbox filters through messenger.conversations.list. |
+| `summer_cases_list` | cases.read | List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Operational filters require the company's operational connection; Messenger-only results include coverage limits. |
 | `summer_cases_search` | cases.read | Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act. |
 | `summer_cases_get` | cases.read | Read one case or conversation with its original messages and related records. |
 | `summer_cases_attachment` | cases.read | Get a short-lived download for an attachment that belongs to this case. |
 | `summer_cases_customer_profile` | cases.read | Read the case customer's profile: name, date of birth, contact details, default shipping and billing addresses, each order's addresses and earlier addresses. A saved address does not prove where an existing order ships. |
 | `summer_investigations_list` | cases.read | Read investigation runs, saved plans, approval state and execution receipts for a case. |
-| `summer_runs_list` | cases.read | List investigation and execution runs across cases, newest first, with status, plan approval and date filters. Use investigations.list for one case's full plans and receipts. |
+| `summer_runs_list` | cases.read | List investigation and execution runs across cases, newest first, with status, plan approval and date filters. |
 | `summer_investigations_request` | investigations.request | Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval. |
 | `summer_actions_prepare` | actions.prepare | Prepare the exact work in the current saved plan for human approval in Summer. Does not approve or execute. |
 | `summer_events_list` | setup | Read configuration and activity events after a cursor. Resume from next_cursor. |
