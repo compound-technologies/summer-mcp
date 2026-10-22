@@ -32,6 +32,10 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |
 | `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice, vocabulary and change history. Starts no call. |
 | `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call. |
+| `summer_imports_intercom_list` | setup | Read Intercom migration previews, saved progress, counts, errors and Summer inbox destinations. Does not start an import. |
+| `summer_imports_intercom_preview` | setup | Check the saved Intercom key against a workspace and preview contact/conversation counts. Save the selected Summer inbox and explicit account-matching choice. Import nothing; send nothing. |
+| `summer_imports_intercom_control` | setup | Start, pause, resume or rescan an Intercom migration with its current version. Optional incremental sync reconciles the same original IDs; no replies, notifications or agent runs. Names/email never verify an account. |
+| `summer_imports_intercom_profiles` | cases.read | Search imported Summer profiles and their original conversation references. Contact details do not establish account ownership. |
 | `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status. |
 | `summer_account_me` | Personal account | Show the signed-in person, Summer access status and this connection's grant. |
 | `summer_account_companies_list` | Personal account | List companies the person can access and whether this connection includes each one. |

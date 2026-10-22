@@ -7,6 +7,7 @@ import { z } from "zod";
 import { messengerPresentationSchema } from "./schemas/messenger.ts";
 import { capabilityDefinition, capabilityPath, capabilityResult } from "./schemas/capabilities.ts";
 import { guideId, saveGuideInput, saveArticleInput, publishGuideInput, unpublishGuideInput, createAssetInput, editAssetInput, saveHostingInput, verifyHostingInput } from "./schemas/guides.ts";
+import { INTERCOM_OPERATIONS } from "./intercom-operations.ts";
 import { WORKSPACE_OPERATIONS, caseListQuery } from "./workspace-operations.ts";
 
 export const API_VERSION = "2026-10-20";
@@ -207,6 +208,7 @@ const runsQuery = z.object({
 
 export const OPERATIONS: Operation[] = [
   ...WORKSPACE_OPERATIONS,
+  ...INTERCOM_OPERATIONS,
   // Account: any connection, including a person whose access is pending.
   { id: "client.status", method: "GET", path: "/client-status", scope: null, ownership: "user", effect: "read", mcp: "full", release: "A",
     summary: "Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status.",
