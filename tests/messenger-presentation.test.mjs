@@ -30,3 +30,9 @@ test('company colors accept only hex values through the shared API and MCP contr
  const settings={enabled:true,guests_enabled:true,display_name:'Example',allowed_origins:['https://example.test'],privacy_url:'',fallback_url:'',office_hours:'',presentation:{colors}};
  const saved=operationById.get('messenger.installations.update').body.parse({expected_version:1,settings});assert.equal(saved.settings.presentation.colors.accent,'#2457c5');
 });
+
+test('required registration and custom fields round trip without ambiguous keys',()=>{
+ const form=messengerPresentationSchema.parse({lead_capture:{required_before_chat:true,custom_fields:[{key:'interest',label:'Interested in',type:'select',required:true,options:['Demo','Support']}]}}).lead_capture;
+ assert.equal(form.required_before_chat,true);assert.equal(form.custom_fields[0].required,true);
+ for(const custom_fields of [[{key:'email',label:'Email'}],[{key:'x',label:'X'},{key:'x',label:'Duplicate'}],[{key:'x',label:'X',type:'select',options:[]}],Array.from({length:11},(_,i)=>({key:'x_'+i,label:'Field'}))])assert.equal(messengerPresentationSchema.safeParse({lead_capture:{custom_fields}}).success,false);
+});

@@ -19,6 +19,12 @@ export const messengerPresentationSchema = z.object({
  thread_description: copy(300).default("Ask a question here. We can help you find the next step."),
  actions: z.array(action).max(6).default([{ type: "lead_capture", label: "Request follow-up", show_on_home: false, show_in_chat: true }]),
  lead_capture: z.object({
+  required_before_chat: z.boolean().default(false),
+  custom_fields: z.array(z.object({
+   key: z.string().regex(/^[a-z][a-z0-9_]{0,49}$/).refine(value => !["name", "email", "phone", "company", "message", "consent"].includes(value)),
+   label: copy(60), type: z.enum(["text", "select"]).default("text"), required: z.boolean().default(false),
+   options: z.array(copy(100)).max(20).default([]),
+  }).strict().refine(field => field.type !== "select" || field.options.length > 0, "Add choices for a dropdown.")).max(10).refine(fields => new Set(fields.map(field => field.key)).size === fields.length, "Use a different key for each field.").default([]),
   title: copy(100).default("Request follow-up"),
   description: copy(300).default("Leave your details so our team can contact you."),
   name_label: copy(60).default("Name"), email_label: copy(60).default("Email"), company_label: copy(60).default("Company"),

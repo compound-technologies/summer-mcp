@@ -54,13 +54,22 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_assistant_update` | setup | Update assistant instructions and escalation permission with the expected revision. Company facts live in shared knowledge. Cannot raise the spending limit. |
 | `summer_messenger_voice_read` | setup | Read voice chat settings per installation, the voice services and their voices, published help article count and the voice assistant's update status. |
 | `summer_messenger_voice_update` | setup | Update voice chat settings with the expected revision. Summer updates the voice assistant from these settings and the company's published help articles. |
+| `summer_messenger_email_read` | setup | Read support email addresses: the private forwarding address, the one DNS record to add, whether mail has arrived, sending status, Gmail forwarding codes and emails that need a look. |
+| `summer_messenger_email_create` | setup | Add a support email address. Summer creates its private forwarding address and signing key and returns the DNS record to add. The address starts off; nothing is sent. |
+| `summer_messenger_email_update` | setup | Change the sender name or turn a support email address on or off, with the expected version. Turning on needs one received email. Turning off keeps every email but stops new conversations and replies. |
+| `summer_messenger_email_check` | setup | Check forwarding, the DNS record and sending status for one support email address now. Records the latest sending status; sends nothing. |
+| `summer_slack_identity_read` | setup | Read the support name and avatar shown on Summer's approved Slack replies, whether the Slack install allows them, and the change history. |
+| `summer_slack_identity_update` | setup | Set the support name and avatar on Summer's approved Slack replies, with the expected revision and a reason. Null values use the plain Summer Ellis identity. Sends no message. |
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |
-| `summer_cases_list` | cases.read | List company-owned cases or conversations, newest first, with coverage and a cursor. Text search is not available through the API yet. |
+| `summer_cases_list` | cases.read | List company-owned cases or conversations, newest first, with coverage and a cursor. To find a customer or case, use cases.search. |
+| `summer_cases_search` | cases.read | Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act. |
 | `summer_cases_get` | cases.read | Read one case or conversation with its original messages and related records. |
 | `summer_cases_attachment` | cases.read | Get a short-lived download for an attachment that belongs to this case. |
+| `summer_cases_customer_profile` | cases.read | Read the case customer's profile: name, date of birth, contact details, default shipping and billing addresses, each order's addresses and earlier addresses. A saved address does not prove where an existing order ships. |
 | `summer_investigations_list` | cases.read | Read investigation runs, saved plans, approval state and execution receipts for a case. |
+| `summer_runs_list` | cases.read | List investigation and execution runs across cases, newest first, with status, plan approval and date filters. Use investigations.list for one case's full plans and receipts. |
 | `summer_investigations_request` | investigations.request | Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval. |
 | `summer_actions_prepare` | actions.prepare | Prepare the exact work in the current saved plan for human approval in Summer. Does not approve or execute. |
 | `summer_events_list` | setup | Read configuration and activity events after a cursor. Resume from next_cursor. |

@@ -172,6 +172,26 @@ const credentialBody = z.discriminatedUnion("source", [
   z.object({ source: z.literal("doppler"), secret_name: schemas.credentialName, expected_version: schemas.version }).strict(),
 ]);
 const caseParams = companyEnv.extend({ case: uuid }).strict();
+const instant = z.string().datetime({ offset: true }).describe("ISO 8601 time with an offset, for example 2026-10-01T00:00:00Z");
+const yesNo = z.union([z.boolean(), z.enum(["true", "false"])]);
+const caseSearchQuery = z.object({
+  q: z.string().trim().min(2).max(200).optional().describe("Customer name, email, phone, support code, order or tracking number, Stripe, MDI, Beluga or GEN ID, or care session ID. With messages=true, also words in customer and team messages."),
+  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("Exact date of birth, YYYY-MM-DD. With q, keeps only customers that match both."),
+  messages: yesNo.optional().describe("Also search message text for q. Needs q."),
+  status: z.enum(["open", "resolved", "all"]).optional().describe("Default all"),
+  created_after: instant.optional(), created_before: instant.optional(),
+  activity_after: instant.optional().describe("Cases updated at or after this time"), activity_before: instant.optional().describe("Cases updated before this time"),
+  include_test: yesNo.optional().describe("Include staff and test accounts"),
+  limit: z.coerce.number().int().min(1).max(100).optional().describe("Default 25"),
+}).strict();
+const runsQuery = z.object({
+  status: z.enum(["all", "approval", "active", "queued", "review", "completed", "stopped", "waiting"]).optional().describe("approval: plans waiting for human approval; review: runs that need a person to check them"),
+  kind: z.enum(["all", "investigation", "execution"]).optional(),
+  executed: yesNo.optional().describe("Only approved executions, with their effects"),
+  sort: z.enum(["results", "created", "started", "approved"]).optional(),
+  created_after: instant.optional(), created_before: instant.optional(),
+  cursor: z.string().regex(/^[1-9]\d{0,5}$/).optional(),
+}).strict();
 
 export const OPERATIONS: Operation[] = [
   // Account: any connection, including a person whose access is pending.
@@ -307,6 +327,31 @@ export const OPERATIONS: Operation[] = [
   { id: "messenger.voice.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/installations/{installation}/voice", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
     summary: "Update voice chat settings with the expected revision. Summer updates the voice assistant from these settings and the company's published help articles.",
     params: companyEnv.extend({ installation: uuid }).strict(), body: z.object({ revision: z.number().int().min(0), settings: schemas.voiceSettings }).strict() },
+  { id: "messenger.email.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/email", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Read support email addresses: the private forwarding address, the one DNS record to add, whether mail has arrived, sending status, Gmail forwarding codes and emails that need a look.", params: companyEnv },
+  { id: "messenger.email.create", destructive: false, method: "POST", path: "/companies/{company}/environments/{environment}/messenger/email", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Add a support email address. Summer creates its private forwarding address and signing key and returns the DNS record to add. The address starts off; nothing is sent.",
+    params: companyEnv, body: z.object({
+      support_address: z.string().email().max(254).describe("The address customers already write to, such as support@example.com."),
+      display_name: z.string().trim().min(1).max(80).describe("Sender name customers see on replies."),
+      installation_id: uuid.optional().describe("Messenger installation whose inbox the emails join. Defaults to the first installation."),
+    }).strict() },
+  { id: "messenger.email.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/email/{channel}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
+    summary: "Change the sender name or turn a support email address on or off, with the expected version. Turning on needs one received email. Turning off keeps every email but stops new conversations and replies.",
+    params: companyEnv.extend({ channel: uuid }).strict(), body: z.object({ version: z.number().int().positive(), display_name: z.string().trim().min(1).max(80).optional(), enabled: z.boolean().optional() }).strict() },
+  { id: "messenger.email.check", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/email/{channel}/check", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
+    summary: "Check forwarding, the DNS record and sending status for one support email address now. Records the latest sending status; sends nothing.",
+    params: companyEnv.extend({ channel: uuid }).strict() },
+  { id: "slack.identity.read", method: "GET", path: "/companies/{company}/slack/identity", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "A",
+    summary: "Read the support name and avatar shown on Summer's approved Slack replies, whether the Slack install allows them, and the change history.", params: companyOnly },
+  { id: "slack.identity.update", destructive: false, method: "PUT", path: "/companies/{company}/slack/identity", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Set the support name and avatar on Summer's approved Slack replies, with the expected revision and a reason. Null values use the plain Summer Ellis identity. Sends no message.",
+    params: companyOnly, body: z.object({
+      revision: z.number().int().min(0).describe("Current revision from slack.identity.read; 0 before the first save."),
+      display_name: z.string().trim().min(1).max(80).nullable().describe("Support name shown on replies, such as the company's support team name. Slack still marks the post as an app."),
+      avatar_url: z.string().max(500).regex(/^https:\/\/[^\s<>"]+$/).nullable().describe("Public https image link for the reply avatar."),
+      reason: z.string().trim().min(1).max(1000),
+    }).strict() },
   { id: "company.team.read", method: "GET", path: "/companies/{company}/team", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "D",
     summary: "List company members and pending invitations. Role changes and invitations stay in Summer.", params: companyOnly },
   { id: "messenger.conversations.assistant", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/conversations/{conversation}/assistant", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "C",
@@ -318,15 +363,23 @@ export const OPERATIONS: Operation[] = [
 
   // Release B: company-owned operational data.
   { id: "cases.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "List company-owned cases or conversations, newest first, with coverage and a cursor. Text search is not available through the API yet.", params: companyEnv,
+    summary: "List company-owned cases or conversations, newest first, with coverage and a cursor. To find a customer or case, use cases.search.", params: companyEnv,
     query: page.extend({ status: z.enum(["open", "resolved", "all"]).optional() }).strict() },
+  { id: "cases.search", method: "GET", path: "/companies/{company}/environments/{environment}/cases/search", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Results are leads: read the case and customer profile before you act.", params: companyEnv,
+    query: caseSearchQuery },
   { id: "cases.get", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Read one case or conversation with its original messages and related records.", params: caseParams,
     query: z.object({ after: z.coerce.number().int().min(0).optional() }).strict() },
   { id: "cases.attachment", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/attachments/{attachment}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Get a short-lived download for an attachment that belongs to this case.", params: caseParams.extend({ attachment: uuid }).strict() },
+  { id: "cases.customer_profile", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/customer-profile", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "Read the case customer's profile: name, date of birth, contact details, default shipping and billing addresses, each order's addresses and earlier addresses. A saved address does not prove where an existing order ships.", params: caseParams },
   { id: "investigations.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Read investigation runs, saved plans, approval state and execution receipts for a case.", params: caseParams },
+  { id: "runs.list", method: "GET", path: "/companies/{company}/environments/{environment}/runs", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "List investigation and execution runs across cases, newest first, with status, plan approval and date filters. Use investigations.list for one case's full plans and receipts.", params: companyEnv,
+    query: runsQuery },
   { id: "investigations.request", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "investigations.request", ownership: "environment", effect: "request", mcp: "full", release: "B",
     summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval.", params: caseParams,
     body: z.discriminatedUnion("kind", [
