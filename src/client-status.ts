@@ -1,6 +1,6 @@
 import { API_VERSION } from "./contract.ts";
 
-export const MCP_VERSION = "0.2.2";
+export const MCP_VERSION = "0.2.3";
 export const MINIMUM_CLI_VERSION = "0.2.0";
 export const CLIENT_STATUS_META = "ai.gosummer/client-status";
 const INTERVAL = 7 * 24 * 60 * 60 * 1000;

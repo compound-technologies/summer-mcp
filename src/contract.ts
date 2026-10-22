@@ -34,6 +34,11 @@ export const SCOPES = {
     description: "Prepare the exact work in a saved plan so a person can approve it in Summer. Never approves or executes anything.",
     admin: false,
   },
+  "actions.approve": {
+    title: "Approve authorized case actions",
+    description: "Let your agent approve the exact prepared case work you authorize, including outgoing replies, under your current operator permissions. Records your identity, connection, authorization and plan hash. Does not grant identity attestations or clinical authority.",
+    admin: true,
+  },
   "workspace.write": {
     title: "Manage workspace work",
     description: "Save your inbox views, assign case work and record evidence-backed quality assessments. Shared views and scenario changes retain the company's existing administrator checks. Never grants roles or approves customer actions or privacy requests.",
@@ -64,7 +69,7 @@ export const SCOPES = {
   "capabilities.read": { title: "Read capabilities", description: "Read company capabilities and setup status.", admin: false },
 } as const;
 export type Scope = keyof typeof SCOPES;
-export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "workspace.write", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
+export const DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare", "actions.approve", "workspace.write", "credentials.replace", "messaging.activate", "guides.publish", "automation.manage"] as const satisfies readonly Scope[];
 export const DEFAULT_DELEGATED_SCOPES = ["setup", "cases.read", "investigations.request", "actions.prepare"] as const satisfies readonly Scope[];
 export const SERVICE_SCOPES = ["events.read", "capabilities.read"] as const satisfies readonly Scope[];
 export const ENVIRONMENTS = ["staging", "production"] as const;
@@ -72,7 +77,6 @@ export type Environment = (typeof ENVIRONMENTS)[number];
 
 // Never part of any grant. Listed so clients and docs can say so precisely.
 export const HUMAN_ONLY = [
-  "Approving a business effect, outgoing customer message or plan execution",
   "Revealing a saved credential value",
   "Approving Summer platform access requests",
   "Ownership transfer and owner/admin role grants",
@@ -388,17 +392,17 @@ export const OPERATIONS: Operation[] = [
     summary: "List company-owned cases or conversations with filters, ordering, page size, coverage and a cursor. Operational filters require the company's operational connection; Messenger-only results include coverage limits.", params: companyEnv,
     query: caseListQuery },
   { id: "cases.search", method: "GET", path: "/companies/{company}/environments/{environment}/cases/search", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns customers with masked contacts, cases with plan and run progress, orders and message excerpts. Search matches are leads, not proof of identity or completed work.", params: companyEnv,
+    summary: "Find cases by customer name, email, phone, date of birth, support code, order or tracking number, vendor or Stripe ID, or message words, with status and date filters. Returns one current workspace per verified customer (explicit splits stay separate), with the actual ticket code, all issue references, plan and run progress, orders and message excerpts. Message case_id opens the workspace; source_case_id retains the original issue. Search matches are leads, not proof of identity or completed work.", params: companyEnv,
     query: caseSearchQuery },
   { id: "cases.get", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "Read one case or conversation with its original messages and related records.", params: caseParams,
+    summary: "Read one case or conversation with its original messages and related records. Operational records include workspace with the current customer ticket and all owned issue references, plus the shared saved timeline. The original case identity is retained.", params: caseParams,
     query: z.object({ after: z.coerce.number().int().min(0).optional() }).strict() },
   { id: "cases.attachment", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/attachments/{attachment}", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Get a short-lived download for an attachment that belongs to this case.", params: caseParams.extend({ attachment: uuid }).strict() },
   { id: "cases.customer_profile", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/customer-profile", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "Read the case customer's profile: name, date of birth, contact details, default shipping and billing addresses, each order's addresses and earlier addresses. A saved address does not prove where an existing order ships.", params: caseParams },
   { id: "investigations.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
-    summary: "Read investigation runs, saved plans, approval state and execution receipts for a case.", params: caseParams },
+    summary: "Read shared investigation runs, saved plans, approval state and execution receipts across the verified customer’s cases, including historical issues. Each run retains its original support_case_id; use that ID for write operations and original run evidence.", params: caseParams },
   { id: "runs.list", method: "GET", path: "/companies/{company}/environments/{environment}/runs", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "List investigation and execution runs across cases, newest first, with status, plan approval and date filters.", params: companyEnv,
     query: runsQuery },
@@ -411,8 +415,11 @@ export const OPERATIONS: Operation[] = [
 
   // Release C: exact approved execution through the existing boundary.
   { id: "actions.prepare", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/actions/prepare", scope: "actions.prepare", ownership: "environment", effect: "request", mcp: "full", release: "C",
-    summary: "Prepare the exact work in the current saved plan for human approval in Summer. Does not approve or execute.", params: caseParams,
-    body: z.object({ plan_request_id: uuid }).strict() },
+    summary: "Prepare the exact current plan and return its execution ID, approval hash and reviewed work. Does not approve or execute. A delegated actions.approve grant can approve authorized work through API, CLI or MCP.", params: caseParams,
+    body: z.object({ plan_request_id: uuid, replaces_execution: uuid.optional().describe("Replace an unapproved, unstarted queued execution whose source or selected plan changed. Existing approvals and uncertain work cannot be replaced.") }).strict() },
+  { id: "actions.approve", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/actions/approve", scope: "actions.approve", ownership: "environment", effect: "request", mcp: "full", release: "C",
+    summary: "Approve the exact prepared execution under the authenticated operator's delegated authority. Use only for work the operator authorized, read the prepared review first, and pass its exact hash. Records the authorization and queues ordinary execution; approval does not prove a customer outcome. No caller-supplied approver identity or identity-verification attestation.", params: caseParams,
+    body: z.object({ execution: uuid, approval_hash: z.string().regex(/^[a-f0-9]{64}$/), authorization: z.string().trim().min(1).max(2000).describe("The operator's instruction authorizing this exact work, retained in the approval audit. This is context, not an identity attestation.") }).strict() },
 
   // Release D: automation.
   { id: "events.list", method: "GET", path: "/companies/{company}/environments/{environment}/events", scope: "setup", alsoScope: "events.read", ownership: "environment", effect: "read", mcp: "full", release: "D",

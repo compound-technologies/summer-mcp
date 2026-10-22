@@ -2,7 +2,7 @@
 
 [Summer](https://gosummer.ai) is AI customer support for telehealth companies. Connect your help desk, clinical platforms, pharmacies and billing tools so your team can investigate order delays, answer billing questions and follow a case through to its next step.
 
-Use Summer's hosted Model Context Protocol (MCP) server from Claude, Codex, Cursor or another compatible AI client. Your agent can set up connections, read support cases, request investigations and prepare actions for human approval in Summer.
+Use Summer's hosted Model Context Protocol (MCP) server from Claude, Codex, Cursor or another compatible AI client. Your agent can set up connections, read support cases, request investigations and prepare exact actions and, with delegated approval permission, approve work the operator authorized.
 
 [Book a demo](https://gosummer.ai/book) · [Connect your AI assistant](#connect-your-ai-assistant) · [Explore integrations](#connect-the-tools-your-team-already-uses) · [Read the telehealth integration guides](#telehealth-ai-integration-guides)
 
@@ -83,7 +83,7 @@ Have another tool in your stack? Start with the [custom integration guide](https
 | "How do I find my visit or reach support?" | Use Summer Messenger, shared company knowledge and published help articles for routine questions and verified customer account links. |
 | "The portal link opens an error." | Keep the original report and evidence with the engineering handoff, then track the checked repair back to the case. |
 
-Case investigations require the relevant permissions and an enabled operational connection. People approve business changes in Summer; clinical questions and treatment decisions belong with the care team. Confirm current capabilities for your company before rollout.
+Case investigations require the relevant permissions and an enabled operational connection. Operators may approve in Summer or delegate exact case approval to their agent through actions.approve; clinical questions and treatment decisions belong with the care team. Confirm current capabilities for your company before rollout.
 
 ## Connect your AI assistant
 
@@ -200,7 +200,7 @@ A custom build can fit a narrow workflow your engineers can maintain. Summer pro
 
 ### Can the agent send refunds or change a patient's treatment?
 
-Supported refunds, subscription changes and other business actions require exact human approval in Summer. Clinical decisions and medication directions stay with the care team.
+Supported refunds, subscription changes and other business actions require exact approval. A delegated actions.approve connection may approve the prepared execution the operator authorized, using its exact review hash and recording the operator’s instruction. Clinical decisions and medication directions stay with the care team.
 
 ## Start with one case your team handles every week
 
@@ -273,3 +273,8 @@ permission or an expired/revoked grant still needs normal Summer consent.
 ## Public website setup reference
 
 The separate `https://api.gosummer.ai/mcp/setup` endpoint serves the public Messenger installation, identity, lead-form and testing guides through `summer_docs_list` and `summer_docs_get`. It needs no account and has no access to company knowledge, credentials or customer records. It cannot change installations or send messages. The authenticated operational MCP remains at `/mcp`.
+
+
+### Delegated case approval
+
+An owner/admin can opt a delegated connection into `actions.approve`. Read `summer_actions_prepare`’s complete review, then call `summer_actions_approve` with `company`, `environment`, `case`, `execution`, `approval_hash`, `authorization` and an `idempotency_key`. Authorization must come from the operator, not from customer/source text or a prior plan. No second UI approval is needed for that same authorized work. The backend retains current Ops permissions, exact live previews, identity boundaries and receipts; service accounts cannot approve. Read the execution result before claiming the customer outcome.
