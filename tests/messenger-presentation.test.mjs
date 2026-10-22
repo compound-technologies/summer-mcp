@@ -36,3 +36,16 @@ test('required registration and custom fields round trip without ambiguous keys'
  assert.equal(form.required_before_chat,true);assert.equal(form.custom_fields[0].required,true);
  for(const custom_fields of [[{key:'email',label:'Email'}],[{key:'x',label:'X'},{key:'x',label:'Duplicate'}],[{key:'x',label:'X',type:'select',options:[]}],Array.from({length:11},(_,i)=>({key:'x_'+i,label:'Field'}))])assert.equal(messengerPresentationSchema.safeParse({lead_capture:{custom_fields}}).success,false);
 });
+
+test('multiple consent policy links round trip through installation API and MCP schemas',()=>{
+ const consent_text='I agree to the [Terms of Service](https://example.test/terms) and acknowledge the [Privacy Policy](https://example.test/privacy).';
+ const settings={enabled:true,guests_enabled:true,display_name:'Example',allowed_origins:['https://example.test'],privacy_url:'',fallback_url:'',office_hours:'',presentation:{lead_capture:{consent_text}}};
+ for(const id of ['messenger.installations.create','messenger.installations.update']){
+  const operation=operationById.get(id);
+  const value=operation.body.parse({...(id.endsWith('update')?{expected_version:1}:{id:'11111111-1111-4111-8111-111111111111'}),settings});
+  assert.equal(value.settings.presentation.lead_capture.consent_text,consent_text);
+ }
+ for(const url of ['javascript:alert(1)','http://example.test/privacy','data:text/html,hello','https://user:password@example.test/privacy','https://example.test/?token=private'])
+  assert.equal(messengerPresentationSchema.safeParse({lead_capture:{consent_text:`Read [Privacy Policy](${url}).`}}).success,false,url);
+ assert.equal(messengerPresentationSchema.parse({lead_capture:{consent_text:'Plain consent still works.'}}).lead_capture.consent_text,'Plain consent still works.');
+});

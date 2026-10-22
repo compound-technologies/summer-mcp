@@ -31,7 +31,12 @@ test('anonymous discovery does not read identity or execute operations; invalid 
   backend.execute = async () => { effects++; throw new Error('Must not execute'); };
   const result = await handleMcp(request('tools/list'), demoConfig, backend);
   assert.equal(result.status, 200);
-  assert.equal((await result.json()).result.tools.length, TOOLS.length);
+  const listed = (await result.json()).result.tools;
+  assert.equal(listed.length, TOOLS.length);
+  for (const tool of listed) {
+    assert.ok(tool.title, `${tool.name} needs a display title`);
+    assert.equal(tool.annotations.title, tool.title, `${tool.name} needs the same title for directory clients`);
+  }
   assert.equal(reads, 0); assert.equal(effects, 0);
   const bad = await handleMcp(request('tools/list', {}, { authorization: 'Bearer invalid-demo' }), demoConfig, backend);
   assert.equal(bad.status, 401); assert.equal(reads, 1); assert.equal(effects, 0);

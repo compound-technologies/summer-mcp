@@ -11,6 +11,7 @@ test('client status distinguishes old versions, changed catalogs and overdue che
   assert.deepEqual(clientStatus(current, now).warnings, []);
   assert.equal(clientStatus({ ...current, last_checked_at: new Date(now - week).toISOString() }, now).warnings[0].code, 'freshness_check_due');
   assert.deepEqual(clientStatus({ cli_version: '0.1.0', mcp_version: '0.1.0' }, now).warnings.map(w => w.code), ['cli_outdated', 'mcp_catalog_changed', 'freshness_check_due']);
+  assert.match(clientStatus({ mcp_version: '0.1.0' }, now).warnings[0].message, /using your saved OAuth connection/);
   assert.equal(clientStatus({ ...current, cli_version: '99.0.0' }, now).warnings.length, 0);
   assert.equal(clientStatus({ ...current, last_checked_at: new Date(now + 1000).toISOString() }, now).refresh_required, true);
   const schema = TOOLS.find(t => t.name === 'summer_client_status').schema;

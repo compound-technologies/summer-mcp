@@ -4,6 +4,7 @@ const copy = (max: number) => z.string().trim().min(1).max(max).refine(value => 
 const destination = z.string().max(1024).refine(value => {
  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(key => /^(token|access_token|password|secret|code|otp)$/i.test(key)); } catch { return false; }
 }, "Use an HTTPS link without credentials or access tokens.");
+export const messengerConsentTextSchema = copy(500).refine(value => [...value.matchAll(/\[([^\[\]]+)\]\(([^\s)]+)\)/g)].every(match => destination.safeParse(match[2]).success), "Consent links must use HTTPS without credentials or access tokens.").describe("Consent copy. Add any number of inline links with [Privacy Policy](https://example.com/privacy). Links open in a new tab; HTML is displayed as text. The exact copy and URLs are retained with the submission.");
 const action = z.discriminatedUnion("type", [
  z.object({ type: z.literal("link"), label: copy(60), url: destination, show_on_home: z.boolean(), show_in_chat: z.boolean() }).strict(),
  z.object({ type: z.literal("lead_capture"), label: copy(60), show_on_home: z.boolean(), show_in_chat: z.boolean() }).strict(),
@@ -31,7 +32,7 @@ export const messengerPresentationSchema = z.object({
   phone_label: copy(60).default("Phone number"), show_phone: z.boolean().default(false), phone_required: z.boolean().default(false),
   message_label: copy(60).default("Message"), show_message: z.boolean().default(true),
   show_company: z.boolean().default(true), company_required: z.boolean().default(false),
-  consent_text: copy(500).default("I agree that this team may contact me using these details."),
+  consent_text: messengerConsentTextSchema.default("I agree that this team may contact me using these details."),
   submit_label: copy(60).default("Send my details"), success_message: copy(200).default("Your details are saved for our team."),
   follow_up_label: copy(60).default("Book a call"), follow_up_url: destination.or(z.literal("")).default(""),
  }).strict().refine(value => (!value.company_required || value.show_company) && (!value.phone_required || value.show_phone), "Show each required field.").prefault({}),

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+- Include tool display titles in annotations for directory clients.
+- Add a separate public setup-documentation MCP with enumerated topics and no account backend.
+- Verify current and legacy clients, private-input refusals and public-only guide reads.
+
 ## 0.2.0
 
 - Publish Summer's existing MCP transport and operation contract as a standalone source package.

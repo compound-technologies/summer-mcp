@@ -262,6 +262,14 @@ separate diagnostic check is useful after an unknown tool or schema mismatch. Us
 `last_checked_at` for structured warnings. A stale check does not prove an obsolete
 version. The server cannot inspect local installations or cached tool lists.
 Known old Summer CLI versions also receive a warning in initialization instructions.
-Refresh initialization and `tools/list` when catalog versions differ. Check CLI npm
-releases with `summer version --check --json`. Software updates never grant scopes
-or approve effects; reconnect through normal Summer consent when required.
+Refresh initialization and `tools/list` when catalog versions differ, using the
+saved OAuth connection. Software and tool catalog updates require no new login
+or consent. Access tokens refresh under the same grant, retaining its permissions,
+companies and environments. Keep the client's saved OAuth registration and refresh
+credentials across updates; do not register a new client for each software version.
+Check CLI npm releases with `summer version --check --json`. A genuinely added
+permission or an expired/revoked grant still needs normal Summer consent.
+
+## Public website setup reference
+
+The separate `https://api.gosummer.ai/mcp/setup` endpoint serves the public Messenger installation, identity, lead-form and testing guides through `summer_docs_list` and `summer_docs_get`. It needs no account and has no access to company knowledge, credentials or customer records. It cannot change installations or send messages. The authenticated operational MCP remains at `/mcp`.

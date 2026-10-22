@@ -62,7 +62,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
     filter: z.enum(["open", "needs_human", "plan_ready", "agent_working", "waiting_customer", "resolved", "all"]).optional(),
     conversation: uuid.optional(),
   }).strict() },
-  { ...envRead("messenger.conversations.get", "/messenger/conversations/{conversation}", "Read original Messenger messages, contact form details, read receipts and attachments without marking the chat read."), params: environment.extend({ conversation: uuid }).strict(), query: z.object({ after: z.coerce.number().int().min(0).optional(), receipt_after: z.coerce.number().int().min(0).optional(), file_id: uuid.optional(), view: z.enum(["state"]).optional() }).strict() },
+  { ...envRead("messenger.conversations.get", "/messenger/conversations/{conversation}", "Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read."), params: environment.extend({ conversation: uuid }).strict(), query: z.object({ after: z.coerce.number().int().min(0).optional(), receipt_after: z.coerce.number().int().min(0).optional(), file_id: uuid.optional(), view: z.enum(["state"]).optional() }).strict() },
   envRead("pharmacy_calls.settings.read", "/pharmacy-calls/settings", "Read demo pharmacy-call voice, vocabulary and change history. Starts no call."),
   { ...write("pharmacy_calls.settings.update", `${environmentPath}/pharmacy-calls/settings`, "Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call.", z.object({ revision: z.number().int().min(0), voice_id: z.string().max(40).nullable(), vocabulary: z.array(z.string().trim().min(1).max(60)).max(100) }).strict()), params: environment, ownership: "environment" },
 ];

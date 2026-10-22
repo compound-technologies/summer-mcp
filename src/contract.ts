@@ -125,7 +125,7 @@ export const schemas = {
     privacy_url: z.string().max(512),
     fallback_url: z.string().max(512),
     office_hours: z.string().max(200),
-    presentation: messengerPresentationSchema.optional().describe("Company chat colors, welcome and chat copy, home/chat links and contact form labels. Plain text only; links use HTTPS. Scoped to this installation."),
+    presentation: messengerPresentationSchema.optional().describe("Company chat colors, welcome and chat copy, home/chat links and contact form labels. Consent text supports multiple [label](https://example.com/policy) links; other copy is plain text. Links use HTTPS. Scoped to this installation."),
     routing: z.object({
       clinician_url: z.string().max(512).optional(), sign_in_url: z.string().max(512).optional(), catalog_url: z.string().max(512).optional(),
       offer_url: z.string().max(512).optional(), offer_label: z.string().max(80).optional(), destination_origins: z.array(z.string().max(256)).max(10).optional(),
@@ -291,7 +291,8 @@ export const OPERATIONS: Operation[] = [
     summary: "Update company-wide settings with the expected version. Affects every environment.", params: companyOnly,
     body: z.object({ name: z.string().trim().min(1).max(120), timezone: schemas.timezone, workflow: z.enum(["support", "order_status", "billing", "custom"]), note: z.string().trim().max(1000), expected_version: schemas.version }).strict() },
   { id: "integrations.list", method: "GET", path: "/companies/{company}/environments/{environment}/integrations", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
-    summary: "List provider integrations, their required fields and saved metadata. Never returns values.", params: companyEnv },
+    summary: "List provider integrations, their categories, required fields and saved metadata. Filter by search, category or connection. Connected means all required credentials are available, not a live provider check. Never returns values.", params: companyEnv,
+    query: z.object({ search: z.string().trim().max(200).optional(), category: z.enum(["clinical", "messaging", "shipping", "billing", "data", "custom"]).optional(), connection: z.enum(["connected", "not_connected"]).optional() }).strict() },
   { id: "integrations.save", method: "PUT", path: "/companies/{company}/environments/{environment}/integrations/{integration}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
     summary: "Define a custom integration's credential names and labels. No secret values. Saving a definition does not establish runtime access; upload secrets through the local CLI and verify an agent-usable path.", params: companyEnv.extend({ integration: z.string().regex(/^custom-[a-z0-9-]{1,64}$/) }).strict(),
     body: z.object({ expected_version: schemas.version, name: z.string().trim().min(1).max(100), fields: z.array(z.object({ name: schemas.credentialName, label: z.string().trim().min(1).max(100), required: z.boolean() }).strict()).min(1).max(128) }).strict() },

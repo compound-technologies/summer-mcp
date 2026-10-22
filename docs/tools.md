@@ -29,7 +29,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_reports_commitments` | cases.read | Read outstanding customer promises and unfinished work. |
 | `summer_agent_exclusions_list` | cases.read | Read the company's sender exclusions and original edit history. Changes retain human approval. |
 | `summer_messenger_conversations_list` | cases.read | Search and filter the complete Messenger inbox, including visitor conversations without Ops cases. |
-| `summer_messenger_conversations_get` | cases.read | Read original Messenger messages, contact form details, read receipts and attachments without marking the chat read. |
+| `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |
 | `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice, vocabulary and change history. Starts no call. |
 | `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call. |
 | `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Supply the versions and last successful check cached by your client; omitted values are unknown. |
@@ -65,7 +65,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_capability_checks_test` | setup | Request a read-only Summer capability test on an authorized sample case. Also needs investigations.request and current runtime access. Does not approve or execute customer changes. |
 | `summer_company_settings_read` | setup | Read company-wide settings. Changes affect every environment. |
 | `summer_company_settings_update` | setup | Update company-wide settings with the expected version. Affects every environment. |
-| `summer_integrations_list` | setup | List provider integrations, their required fields and saved metadata. Never returns values. |
+| `summer_integrations_list` | setup | List provider integrations, their categories, required fields and saved metadata. Filter by search, category or connection. Connected means all required credentials are available, not a live provider check. Never returns values. |
 | `summer_integrations_save` | setup | Define a custom integration's credential names and labels. No secret values. Saving a definition does not establish runtime access; upload secrets through the local CLI and verify an agent-usable path. |
 | `summer_credentials_list` | setup | List saved credential names, sources and versions. Never returns values. |
 | `summer_credentials_set` | setup | Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only. Secret transfer uses a local CLI handoff. |

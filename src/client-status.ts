@@ -1,6 +1,6 @@
 import { API_VERSION } from "./contract.ts";
 
-export const MCP_VERSION = "0.2.1";
+export const MCP_VERSION = "0.2.2";
 export const MINIMUM_CLI_VERSION = "0.2.0";
 export const CLIENT_STATUS_META = "ai.gosummer/client-status";
 const INTERVAL = 7 * 24 * 60 * 60 * 1000;
@@ -16,7 +16,7 @@ export function clientStatus(input: { cli_version?: string; mcp_version?: string
   if (input.cli_version && compare(input.cli_version, MINIMUM_CLI_VERSION) < 0)
     warnings.push({ code: "cli_outdated", message: `Summer CLI ${input.cli_version} predates this catalog. Run npm install -g @gosummerai/cli@latest, then summer version --check --json. A source checkout is not a published release.` });
   if (input.mcp_version && compare(input.mcp_version, MCP_VERSION) !== 0)
-    warnings.push({ code: "mcp_catalog_changed", message: `Your cached Summer MCP version ${input.mcp_version} differs from live ${MCP_VERSION}. Reconnect and refresh initialization and tools/list.` });
+    warnings.push({ code: "mcp_catalog_changed", message: `Your cached Summer MCP version ${input.mcp_version} differs from live ${MCP_VERSION}. Refresh initialization and tools/list using your saved OAuth connection. A version change needs no new login or permission.` });
   const checked = input.last_checked_at ? Date.parse(input.last_checked_at) : NaN;
   const refreshRequired = !Number.isFinite(checked) || checked > now || now - checked >= INTERVAL;
   if (refreshRequired) warnings.push({ code: "freshness_check_due", message: "The last successful client check is unknown or at least seven days old. Check the published CLI version and refresh MCP initialization and tools/list; age alone does not prove an old version." });
