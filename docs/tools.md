@@ -4,8 +4,9 @@ Generated from the operation catalog. The hosted deployment and your granted per
 
 | Tool | Required permission | Purpose |
 | --- | --- | --- |
+| `summer_github_issues_read` | cases.read | Check issue permission and repository visibility, or read one original GitHub issue by number. Restricted to company-selected repositories; no credentials or writes. Issue closure does not resolve the customer case. |
 | `summer_github_connection_read` | setup | Read the company GitHub installation, selected repositories/folders and cached commit status. Makes no GitHub request and returns no credentials. |
-| `summer_github_connection_start` | setup | Get the Summer browser URL for a company administrator to install and authorize the read-only GitHub App. Does not grant access or connect an installation by itself. |
+| `summer_github_connection_start` | setup | Get the Summer browser URL for a company administrator to install and authorize the Summer GitHub App. Code access is read-only; issue handoffs use separate GitHub Issues permission and exact case approval. Does not grant access or connect an installation by itself. |
 | `summer_github_repositories_list` | setup | List repositories available to this company GitHub installation. Provider metadata read; no file content. |
 | `summer_github_folders_list` | setup | Browse repository folders at a branch or commit before selecting access. |
 | `summer_github_sources_save` | setup | Choose repository branches/commits and allowed folders. A dot selects the whole repository. Replaces selections with an expected version and invalidates old cached access. Does not sync code. |
@@ -37,6 +38,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_privacy_requests_create` | setup | File an export or deletion request for human review. Cannot approve, perform or attest completion of the work. |
 | `summer_work_routing_read` | setup | Read eligible teammates and automatic owner/reviewer routing settings. |
 | `summer_work_routing_update` | setup | Save automatic owner/reviewer routing with the expected version. Does not grant roles or approval authority. |
+| `summer_cases_engineering_list` | cases.read | Read private engineering issue associations, optionally checking original GitHub state. Does not close cases or send replies. |
 | `summer_cases_assignment_read` | cases.read | Read a case's issue owner, plan reviewer and eligible teammates. |
 | `summer_cases_assignment_update` | workspace.write | Assign an issue owner or plan reviewer with the previous owner as a conflict check. Does not grant roles or approve a plan. |
 | `summer_reports_credits` | cases.read | Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone. |
