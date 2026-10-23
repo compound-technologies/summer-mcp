@@ -23,6 +23,7 @@ export const teammateCreateInput = z.discriminatedUnion("kind", [
     last_name: z.string().trim().min(1).max(30),
     email_address: z.string().trim().email().max(254).describe("The company's own address for this teammate. Summer never reads this mailbox."),
     avatar_url: avatarUrl.nullable().optional(),
+    use_suggested_photo: z.boolean().optional().describe("For a name from teammates.names.list: give the teammate that name's suggested photo with the company's own address. Ignores avatar_url."),
     reason,
   }).strict().describe("The company manages the email and Slack account and connects Slack to Summer."),
 ]);
