@@ -39,6 +39,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_work_routing_read` | setup | Read eligible teammates and automatic owner/reviewer routing settings. |
 | `summer_work_routing_update` | setup | Save automatic owner/reviewer routing with the expected version. Does not grant roles or approval authority. |
 | `summer_cases_engineering_list` | cases.read | Read private engineering issue associations, optionally checking original GitHub state. Does not close cases or send replies. |
+| `summer_cases_similar_list` | cases.read | Read bounded original case-summary text matches, with source observation and matching terms. Does not establish customer identity, link cases, call a model or start work. |
 | `summer_cases_assignment_read` | cases.read | Read a case's issue owner, plan reviewer and eligible teammates. |
 | `summer_cases_assignment_update` | workspace.write | Assign an issue owner or plan reviewer with the previous owner as a conflict check. Does not grant roles or approve a plan. |
 | `summer_reports_credits` | cases.read | Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone. |
