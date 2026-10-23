@@ -111,6 +111,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_messenger_email_check` | setup | Check forwarding, the DNS record and sending status for one support email address now. Records the latest sending status; sends nothing. |
 | `summer_slack_identity_read` | setup | Read the support name and avatar shown on Summer's approved Slack replies, whether the Slack install allows them, and the change history. |
 | `summer_slack_identity_update` | setup | Set the support name and avatar on Summer's approved Slack replies, with the expected revision and a reason. Null values use the plain Summer Ellis identity. Sends no message. |
+| `summer_slack_sender_update` | setup | Choose who posts approved vendor Slack replies: the Summer Ellis app (null) or a Summer Teammate, which then posts from its own Slack account. Uses the revision from slack.identity.read and a reason. Sends no message. |
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |

@@ -384,6 +384,13 @@ export const OPERATIONS: Operation[] = [
       avatar_url: z.string().max(500).regex(/^https:\/\/[^\s<>"]+$/).nullable().describe("Public https image link for the reply avatar."),
       reason: z.string().trim().min(1).max(1000),
     }).strict() },
+  { id: "slack.sender.update", destructive: false, method: "PUT", path: "/companies/{company}/slack/sender", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Choose who posts approved vendor Slack replies: the Summer Ellis app (null) or a Summer Teammate, which then posts from its own Slack account. Uses the revision from slack.identity.read and a reason. Sends no message.",
+    params: companyOnly, body: z.object({
+      revision: z.number().int().min(0).describe("Current revision from slack.identity.read; 0 before the first save."),
+      teammate_id: uuid.nullable().describe("An active teammate from teammates.list, or null for the Summer Ellis app."),
+      reason: z.string().trim().min(1).max(1000),
+    }).strict() },
   { id: "company.team.read", method: "GET", path: "/companies/{company}/team", scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "D",
     summary: "List company members and pending invitations. Role changes and invitations stay in Summer.", params: companyOnly },
   { id: "messenger.conversations.assistant", method: "POST", path: "/companies/{company}/environments/{environment}/messenger/conversations/{conversation}/assistant", scope: "setup", ownership: "environment", effect: "request", mcp: "full", release: "C",
