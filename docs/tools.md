@@ -35,6 +35,8 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_reports_service_metrics` | cases.read | Read current response and resolution metrics in the company timezone. |
 | `summer_reports_delivery` | cases.read | Read delivery attempts, failures and recorded results. Does not retry a delivery. |
 | `summer_reports_commitments` | cases.read | Read outstanding customer promises and unfinished work. |
+| `summer_human_tasks_list` | cases.read | Read work that Summer agents or blocked approvals asked a person to do, with owners, due times, recorded outcomes and change history for one selected task. |
+| `summer_human_tasks_update` | workspace.write | Complete, dismiss, reopen or assign a human task with its expected version. Records the person and outcome. Does not approve a plan or change customer records. |
 | `summer_agent_exclusions_list` | cases.read | Read the company's sender exclusions and original edit history. Changes retain human approval. |
 | `summer_messenger_conversations_list` | cases.read | Search and filter the complete Messenger inbox, including visitor conversations without Ops cases. |
 | `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |

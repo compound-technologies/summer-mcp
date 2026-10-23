@@ -56,6 +56,16 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
   envRead("reports.service_metrics", "/reports/service-metrics", "Read current response and resolution metrics in the company timezone."),
   envRead("reports.delivery", "/reports/delivery", "Read delivery attempts, failures and recorded results. Does not retry a delivery."),
   envRead("reports.commitments", "/reports/commitments", "Read outstanding customer promises and unfinished work."),
+  { ...envRead("human_tasks.list", "/human-tasks", "Read work that Summer agents or blocked approvals asked a person to do, with owners, due times, recorded outcomes and change history for one selected task."), query: z.object({
+    status: z.enum(["open", "done", "dismissed", "all"]).optional(), mine: yesNo.optional(), case: uuid.optional(), task: uuid.optional(),
+  }).strict() },
+  { ...write("human_tasks.update", `${environmentPath}/human-tasks`, "Complete, dismiss, reopen or assign a human task with its expected version. Records the person and outcome. Does not approve a plan or change customer records.", z.object({
+    taskId: uuid, version: z.number().int().min(1), operation: z.enum(["complete", "dismiss", "reopen", "assign"]),
+    outcome: z.string().trim().max(1000).optional(), assigneeId: uuid.nullable().optional(),
+  }).strict().superRefine((input, ctx) => {
+    if (input.operation === "dismiss" && !input.outcome) ctx.addIssue({ code: "custom", path: ["outcome"], message: "Say why the task is not needed." });
+    if (input.operation === "assign" && input.assigneeId === undefined) ctx.addIssue({ code: "custom", path: ["assigneeId"], message: "Choose a teammate, or null to clear the owner." });
+  })), method: "POST", params: environment, ownership: "environment", scope: "workspace.write", alsoScope: "setup" },
   envRead("agent_exclusions.list", "/agent-exclusions", "Read the company's sender exclusions and original edit history. Changes retain human approval."),
   { ...envRead("messenger.conversations.list", "/messenger/conversations", "Search and filter the complete Messenger inbox, including visitor conversations without Ops cases."), query: z.object({
     cursor: page.optional(), limit: z.coerce.number().int().min(1).max(200).optional(), q: z.string().max(200).optional(),
