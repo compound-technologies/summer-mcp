@@ -384,6 +384,13 @@ export const OPERATIONS: Operation[] = [
       avatar_url: z.string().max(500).regex(/^https:\/\/[^\s<>"]+$/).nullable().describe("Public https image link for the reply avatar."),
       reason: z.string().trim().min(1).max(1000),
     }).strict() },
+  { id: "slack.channels.posting.update", destructive: false, method: "PUT", path: "/companies/{company}/slack/channels/{channel}/posting", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
+    summary: "Allow or stop approved agent replies in one vendor Slack channel, with the expected version from teammates.setup.status and a reason. Each reply still needs a person to approve its exact text. Sends no message.",
+    params: companyOnly.extend({ channel: z.string().regex(/^[CG][A-Z0-9]+$/).describe("Slack channel ID from teammates.setup.status") }).strict(), body: z.object({
+      allowed: z.boolean(),
+      expected_version: z.number().int().min(0).describe("postingVersion from teammates.setup.status; 0 before the first change."),
+      reason: z.string().trim().min(1).max(1000),
+    }).strict() },
   { id: "slack.sender.update", destructive: false, method: "PUT", path: "/companies/{company}/slack/sender", scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "A",
     summary: "Choose who posts approved vendor Slack replies: the Summer Ellis app (null) or a Summer Teammate, which then posts from its own Slack account. Uses the revision from slack.identity.read and a reason. Sends no message.",
     params: companyOnly, body: z.object({
