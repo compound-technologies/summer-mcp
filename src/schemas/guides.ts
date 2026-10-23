@@ -13,6 +13,7 @@ export const guideSettings = z.object({
   slug: guideSlug, title: z.string().trim().min(1).max(160),
   description: z.string().trim().max(1000), accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   hero_background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  support_installation_id: z.uuid().nullable().optional(),
   portal_url: publicUrl, logo_asset_id: z.uuid().nullable().optional(),
 }).strict();
 export const saveGuideInput = z.object({ expected_version: version, settings: guideSettings, reason }).strict();
