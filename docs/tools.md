@@ -16,6 +16,10 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_reports_themes_list` | cases.read | Read the latest private recurring-issue reports, original case references, source coverage, generation status and human review. Generated themes are suggestions, not verified causes. |
 | `summer_reports_themes_generate` | investigations.request | Generate a private recurring-issue report from the admitted case-summary cohort. One immutable request ID prevents duplicate inference. No customer, knowledge or publication effect. |
 | `summer_reports_themes_review` | workspace.write | Record a human disposition on a saved recurring-issue theme at its expected revision. Retains the original analysis and source references; does not change cases or company knowledge. |
+| `summer_workflows_list` | cases.read | Read built-in tasks and company/environment-owned workflow templates. Selecting one never runs work. |
+| `summer_workflows_history` | cases.read | Read the original revisions and authenticated edits for a saved workflow. |
+| `summer_workflows_save` | workspace.write | Save, retire or restore a task template with its expected revision. Changes no case or effect authority. |
+| `summer_workflows_request_text` | cases.read | Prepare editable operator guidance from an exact active workflow revision and feedback. Starts no investigation and executes no action. |
 | `summer_support_policy_read` | cases.read | Read business hours, holidays, response commitments and scheduled policy revisions. |
 | `summer_support_policy_update` | setup | Save business hours and response commitments with the expected revision and an effective date. |
 | `summer_saved_replies_list` | cases.read | Read company saved replies, optionally including retired replies. |

@@ -1,4 +1,5 @@
 import { serviceSampleQuery } from "./schemas/service-samples.ts";
+import { workflowSaveInput,workflowRequestInput } from "./schemas/workflows.ts";
 // Public workspace operations; transport/authentication stay in the shared catalog.
 import { z } from "zod";
 import type { Operation } from "./contract.ts";
@@ -40,6 +41,10 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
   {...envRead("reports.themes.generate","/reports/themes","Generate a private recurring-issue report from the admitted case-summary cohort. One immutable request ID prevents duplicate inference. No customer, knowledge or publication effect."),method:"POST",effect:"request",scope:"investigations.request",body:themePeriodInput},
   {...envRead("reports.themes.review","/reports/themes/{report}/review","Record a human disposition on a saved recurring-issue theme at its expected revision. Retains the original analysis and source references; does not change cases or company knowledge."),method:"POST",effect:"write",scope:"workspace.write",params:environment.extend({report:uuid}).strict(),body:themeReviewInput},
 
+  {...envRead("workflows.list","/workflows","Read built-in tasks and company/environment-owned workflow templates. Selecting one never runs work."),query:z.object({retired:yesNo.optional()}).strict()},
+  {...envRead("workflows.history","/workflows/{workflow}/history","Read the original revisions and authenticated edits for a saved workflow."),params:environment.extend({workflow:uuid}).strict()},
+  {...write("workflows.save",`${environmentPath}/workflows`,"Save, retire or restore a task template with its expected revision. Changes no case or effect authority.",workflowSaveInput),params:environment,ownership:"environment",scope:"workspace.write"},
+  {...envRead("workflows.request_text","/workflows/request-text","Prepare editable operator guidance from an exact active workflow revision and feedback. Starts no investigation and executes no action."),method:"POST",body:workflowRequestInput},
   { ...read("support.policy.read", `${companyPath}/support-policy`, "Read business hours, holidays, response commitments and scheduled policy revisions."), scope: "cases.read", alsoScope: "setup" },
   write("support.policy.update", `${companyPath}/support-policy`, "Save business hours and response commitments with the expected revision and an effective date.", policyInput),
   { ...read("saved_replies.list", `${companyPath}/saved-replies`, "Read company saved replies, optionally including retired replies."), scope: "cases.read", alsoScope: "setup", query: z.object({ retired: yesNo.optional() }).strict() },

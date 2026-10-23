@@ -1,3 +1,4 @@
+import { operatorGuidance } from "./schemas/workflows.ts";
 import { GITHUB_OPERATIONS } from './github-operations.ts';
 import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
 // Summer developer contract: scopes, operations, ownership and error codes.
@@ -444,8 +445,8 @@ export const OPERATIONS: Operation[] = [
   { id: "investigations.request", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "investigations.request", ownership: "environment", effect: "request", mcp: "full", release: "B",
     summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval.", params: caseParams,
     body: z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("investigate") }).strict(),
-      z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: z.string().trim().min(1).max(2000) }).strict(),
+      z.object({ kind: z.literal("investigate"), guidance:operatorGuidance.optional() }).strict(),
+      z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: operatorGuidance.min(1) }).strict(),
     ]) },
 
   { id: "investigations.plan.edit", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations/{request}/wording", scope: "investigations.request", ownership: "environment", effect: "write", mcp: "full", release: "B",
