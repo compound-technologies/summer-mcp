@@ -56,7 +56,8 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_teammates_mailbox_list` | cases.read | List mail received by a Summer-managed teammate, newest first, with sender, subject and a short preview. Company-managed teammates have no mailbox in Summer. |
 | `summer_teammates_mailbox_get` | cases.read | Read one message in a Summer-managed teammate's mailbox, including its text. Marks it read for the team. |
 | `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status. |
-| `summer_account_me` | Personal account | Show the signed-in person, Summer access status and this connection's grant. |
+| `summer_account_me` | Personal account | Show the signed-in person, Summer access status, profile photo path and this connection's grant. |
+| `summer_account_photo_remove` | Personal account | Remove your own profile photo. Replies you send afterward show your initials; earlier replies keep the photo they were sent with. |
 | `summer_account_companies_list` | Personal account | List companies the person can access and whether this connection includes each one. |
 | `summer_account_access_request_read` | Personal account | Read the person's Summer access request. Approval is a separate Summer team decision. |
 | `summer_account_access_request_submit` | Personal account | Submit or update a Summer access request. This cannot approve access. |

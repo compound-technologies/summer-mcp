@@ -4,6 +4,8 @@ export const messengerIdentitySchema = z.object({
  mode: z.enum(["human", "ai"]).default("human").describe("Named support persona (default) or a visible AI assistant label."),
  name_style: z.enum(["neutral", "female"]).default("neutral"),
  custom_name: z.string().trim().max(80).refine(value => !/[\u0000-\u001f\u007f]/.test(value), "Use a name without control characters.").default(""),
+ teammate_id: z.string().uuid().nullable().optional().describe("Show this company teammate's uploaded photo beside automated replies. Put the teammate's name in custom_name."),
+ suggested_photo: z.string().regex(/^[a-z]+(-[a-z]+)*\.[a-z]+(-[a-z]+)*$/).nullable().optional().describe("Show the photo of a suggested teammate name (its first.last address part from teammates.names.list) beside automated replies. Put that name in custom_name."),
 }).strict();
 export type MessengerIdentity = z.infer<typeof messengerIdentitySchema>;
 export function messengerAgentName(input?: Partial<MessengerIdentity> | null) {

@@ -10,3 +10,10 @@ test("the shared settings contract defaults to named support and accepts explici
  for(const value of [{mode:"robot"},{custom_name:"Bad\nName"},{name_style:"male"}])assert.equal(messengerIdentitySchema.safeParse(value).success,false);
  for(const value of ["javascript:alert(1)","https://user:secret@example.test/logo.png","http://example.test/logo.png","https://example.test/logo.png?token=secret"])assert.equal(messengerLogoSchema.safeParse(value).success,false);
 });
+
+test("an identity can use a company teammate's photo or a suggested teammate photo", () => {
+ const teammate=messengerIdentitySchema.parse({custom_name:"Maya Bennett",teammate_id:"8dece789-f3da-43d0-947a-cd91774c7b34"});
+ assert.equal(teammate.teammate_id,"8dece789-f3da-43d0-947a-cd91774c7b34");assert.equal(messengerAgentName(teammate),"Maya Bennett");
+ assert.equal(messengerIdentitySchema.parse({custom_name:"Clara Hayes",suggested_photo:"clara.hayes"}).suggested_photo,"clara.hayes");
+ for(const value of [{teammate_id:"not-a-uuid"},{suggested_photo:"../etc/passwd"},{suggested_photo:"https://example.test/a.jpg"},{suggested_photo:"Maya.Bennett"}])assert.equal(messengerIdentitySchema.safeParse(value).success,false);
+});
