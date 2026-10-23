@@ -91,7 +91,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_integrations_setup_prompt` | setup | Prepare an integration-specific MCP setup prompt and Codex or Claude Code app links. Includes the selected company, environment and setup brief, never credential values. Does not launch an app or change configuration. |
 | `summer_credentials_list` | setup | List saved credential names, sources and versions. Never returns values. |
 | `summer_credentials_set` | setup | Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only. Secret transfer uses a local CLI handoff. |
-| `summer_knowledge_list` | setup | List current company knowledge documents. Knowledge is company-wide, not per environment. |
+| `summer_knowledge_list` | setup | List current company knowledge documents. Knowledge is company-wide, not per environment. Pass tag to list documents with that tag, such as an integration name (slack, beluga, mdi), which is how Summer shows knowledge related to an integration. |
 | `summer_knowledge_create` | setup | Upload a new company knowledge document with original revision history. The shared library is used by all roles and environments. Existing document IDs are refused. API reference: https://api.gosummer.ai/v1/openapi.json |
 | `summer_knowledge_get` | setup | Read one company knowledge document and its current revision. |
 | `summer_knowledge_history` | setup | Read the edit history of a company knowledge document. |
@@ -112,6 +112,8 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_slack_identity_read` | setup | Read the support name and avatar shown on Summer's approved Slack replies, whether the Slack install allows them, and the change history. |
 | `summer_slack_identity_update` | setup | Set the support name and avatar on Summer's approved Slack replies, with the expected revision and a reason. Null values use the plain Summer Ellis identity. Sends no message. |
 | `summer_slack_sender_update` | setup | Choose who posts approved vendor Slack replies: the Summer Ellis app (null) or a Summer Teammate, which then posts from its own Slack account. Uses the revision from slack.identity.read and a reason. Sends no message. |
+| `summer_slack_channels_list` | setup | List the Slack channels the company selected for Summer, with read and post access and each channel's vendor and purpose. Agents see the vendor and purpose with every vendor Slack read. |
+| `summer_slack_channels_describe` | setup | Set which vendor a selected Slack channel is for and what it is used for, with a reason. Null clears a field. Changes guidance for agents and people; sends no message and changes no channel access. |
 | `summer_company_team_read` | setup | List company members and pending invitations. Role changes and invitations stay in Summer. |
 | `summer_messenger_conversations_assistant` | setup | Pause the assistant in one conversation so a person can take over, or ask it to resume. Pausing stops automatic replies immediately. |
 | `summer_verification_run` | setup | Run supported harmless checks. Unsupported checks are reported as unsupported, never as passed. |
