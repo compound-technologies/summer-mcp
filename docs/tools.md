@@ -75,7 +75,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_capability_checks_save` | setup | Edit a capability expectation or add a business-specific custom_ capability with a reason. Resets its result and retains history. Does not create a provider tool or grant execution access. |
 | `summer_capability_checks_report` | setup | Record the setup agent's capability assessment with original evidence and the path Summer can discover and use. A pass needs evidence and a discovery path. Reports are labeled as agent-reported, never human approval or independently verified execution. |
 | `summer_capability_checks_test` | setup | Request a read-only Summer capability test on an authorized sample case. Also needs investigations.request and current runtime access. Does not approve or execute customer changes. |
-| `summer_company_settings_read` | setup | Read company-wide settings. Changes affect every environment. |
+| `summer_company_settings_read` | setup | Read company-wide settings, including the email subject customers see on new support emails. Changes affect every environment. |
 | `summer_company_settings_update` | setup | Update company-wide settings with the expected version. Affects every environment. |
 | `summer_integrations_list` | setup | List provider integrations, their categories, required fields and saved metadata. Filter by search, category or connection. Connected means all required credentials are available, not a live provider check. Never returns values. |
 | `summer_integrations_save` | setup | Save a custom integration's description, setup instructions and credential field names. This saves metadata only, without credential values or a live connection check. |
