@@ -11,6 +11,7 @@ const yesNo = z.union([z.boolean(), z.enum(["true", "false"])]);
 const page = z.string().regex(/^[1-9]\d{0,5}$/);
 export const caseListQuery = z.object({
   cursor: page.optional(), limit: z.coerce.number().int().min(1).max(200).optional(),
+  sentiment: z.enum(["happy","neutral","upset","angry","sad","mixed","unknown"]).optional(),
   status: z.enum(["open", "in_progress", "resolved", "closed", "active", "all"]).optional(),
   sort: z.enum(["priority", "newest", "oldest", "due", "activity", "autonomy_desc", "autonomy_asc"]).optional(),
   severity: z.enum(["normal", "high", "urgent"]).optional(), category: z.string().max(80).optional(), language: z.enum(["en", "es", "other"]).optional(),
