@@ -40,6 +40,9 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_work_routing_update` | setup | Save automatic owner/reviewer routing with the expected version. Does not grant roles or approval authority. |
 | `summer_cases_engineering_list` | cases.read | Read private engineering issue associations, optionally checking original GitHub state. Does not close cases or send replies. |
 | `summer_cases_similar_list` | cases.read | Read bounded original case-summary text matches, with source observation and matching terms. Does not establish customer identity, link cases, call a model or start work. |
+| `summer_slack_discussions_channels` | cases.read | Read connected Slack posting channels, or inspect the current internal channel name/privacy, posting revision and authenticated sender. Enables no grant and posts nothing. |
+| `summer_cases_discussions_read` | cases.read | Read original Slack replies for an exact recorded case discussion. A root supplied for an unknown send must match the saved original sender, approved text and operation metadata before its source can be retained. Never posts or approves work. |
+| `summer_cases_discussions_list` | cases.read | Read case-linked Slack discussion receipts and original thread links. Unknown posting stays unknown; no message is sent. |
 | `summer_cases_assignment_read` | cases.read | Read a case's issue owner, plan reviewer and eligible teammates. |
 | `summer_cases_assignment_update` | workspace.write | Assign an issue owner or plan reviewer with the previous owner as a conflict check. Does not grant roles or approve a plan. |
 | `summer_reports_credits` | cases.read | Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone. |
