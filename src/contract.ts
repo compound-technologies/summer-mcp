@@ -448,6 +448,14 @@ export const OPERATIONS: Operation[] = [
       z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: z.string().trim().min(1).max(2000) }).strict(),
     ]) },
 
+  { id: "investigations.plan.edit", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations/{request}/wording", scope: "investigations.request", ownership: "environment", effect: "write", mcp: "full", release: "B",
+    summary: "Edit wording in the current saved plan at its expected revision, including proposed company knowledge text. Preserves targets, amounts, feedback sources and selected option. Invalidates prepared approval; does not apply knowledge or customer changes.",
+    params: caseParams.extend({ request: uuid }).strict(), body: z.object({
+      expected_revision: z.number().int().nonnegative(),
+      edits: z.record(z.string().regex(/^(?:task|\d+\.(?:subject|text|body|content))$/), z.string().max(100000)).refine(value => Object.keys(value).length > 0 && Object.keys(value).length <= 100, "Supply between 1 and 100 existing wording fields."),
+      reason: z.string().trim().min(1).max(1000),
+    }).strict() },
+
   // Release C: exact approved execution through the existing boundary.
   { id: "actions.prepare", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/actions/prepare", scope: "actions.prepare", ownership: "environment", effect: "request", mcp: "full", release: "C",
     summary: "Prepare the exact current plan and return its execution ID, approval hash and reviewed work. Does not approve or execute. A delegated actions.approve grant can approve authorized work through API, CLI or MCP.", params: caseParams,
