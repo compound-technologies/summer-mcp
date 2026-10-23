@@ -46,6 +46,13 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_imports_intercom_preview` | setup | Check the saved Intercom key against a workspace and preview contact/conversation counts. Save the selected Summer inbox and explicit account-matching choice. Import nothing; send nothing. |
 | `summer_imports_intercom_control` | setup | Start, pause, resume or rescan an Intercom migration with its current version. Optional incremental sync reconciles the same original IDs; no replies, notifications or agent runs. Names/email never verify an account. |
 | `summer_imports_intercom_profiles` | cases.read | Search imported Summer profiles and their original conversation references. Contact details do not establish account ownership. |
+| `summer_teammates_names_list` | setup | List suggested female and gender-neutral teammate names whose gosummer.ai address is still free. Any typed first and last name also works. |
+| `summer_teammates_list` | setup | List the company's teammates with their address, photo, status, unread mail count and Slack connection. |
+| `summer_teammates_create` | setup | Add a teammate. A managed teammate gets first.last@gosummer.ai, unique across Summer. A company-managed teammate uses the company's own address. Invites no one, joins no Slack workspace and sends nothing. |
+| `summer_teammates_update` | setup | Change a teammate's shown name, photo or status, with the expected revision and a reason. Retiring disconnects Slack and keeps the address reserved. |
+| `summer_teammates_slack_disconnect` | setup | Disconnect a teammate's Slack account from Summer and delete its saved token. The Slack account itself stays in the workspace. Connecting needs the Slack sign-in in Summer settings. |
+| `summer_teammates_mailbox_list` | cases.read | List mail received by a Summer-managed teammate, newest first, with sender, subject and a short preview. Company-managed teammates have no mailbox in Summer. |
+| `summer_teammates_mailbox_get` | cases.read | Read one message in a Summer-managed teammate's mailbox, including its text. Marks it read for the team. |
 | `summer_client_status` | Personal account | Check live Summer MCP/API versions, old client warnings and the seven-day discovery refresh interval. Optional cached client versions and the last successful check timestamp distinguish known and unknown status. |
 | `summer_account_me` | Personal account | Show the signed-in person, Summer access status and this connection's grant. |
 | `summer_account_companies_list` | Personal account | List companies the person can access and whether this connection includes each one. |
