@@ -12,6 +12,10 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_github_sources_sync` | setup | Refresh the selected repository code cache once from GitHub. Reuses the cache for an unchanged commit; sandbox startup never pulls GitHub. |
 | `summer_github_sources_read` | setup | List cached source paths, or read one cached file with path. Only currently selected company folders are available. No live GitHub call or credentials. |
 | `summer_github_connection_disconnect` | setup | Disconnect this company/environment GitHub source access and remove its cached archives. |
+| `summer_reports_themes_get` | cases.read | Read one saved recurring-issue report and its source snapshot, including reports older than the latest list. Requires current operational company access. |
+| `summer_reports_themes_list` | cases.read | Read the latest private recurring-issue reports, original case references, source coverage, generation status and human review. Generated themes are suggestions, not verified causes. |
+| `summer_reports_themes_generate` | investigations.request | Generate a private recurring-issue report from the admitted case-summary cohort. One immutable request ID prevents duplicate inference. No customer, knowledge or publication effect. |
+| `summer_reports_themes_review` | workspace.write | Record a human disposition on a saved recurring-issue theme at its expected revision. Retains the original analysis and source references; does not change cases or company knowledge. |
 | `summer_support_policy_read` | cases.read | Read business hours, holidays, response commitments and scheduled policy revisions. |
 | `summer_support_policy_update` | setup | Save business hours and response commitments with the expected revision and an effective date. |
 | `summer_saved_replies_list` | cases.read | Read company saved replies, optionally including retired replies. |

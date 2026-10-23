@@ -2,6 +2,7 @@
 import { z } from "zod";
 import type { Operation } from "./contract.ts";
 import { policyInput, savedReplyInput, scenarioInput, assessmentInput, privacyRequestInput, viewSaveInput, viewDeleteInput } from "./schemas/workspace.ts";
+import {themePeriodInput,themeReviewInput} from "./schemas/support-themes.ts";
 const uuid = z.string().uuid();
 const company = z.object({ company: uuid }).strict();
 const environment = company.extend({ environment: z.enum(["staging", "production"]) }).strict();
@@ -33,6 +34,11 @@ const write = (id: string, path: string, summary: string, body: z.ZodType): Oper
 const envRead = (id: string, path: string, summary: string): Operation =>
   ({ ...read(id, `${environmentPath}${path}`, summary, environment, "cases.read"), params: environment, ownership: "environment" });
 export const WORKSPACE_OPERATIONS: Operation[] = [
+  {...envRead("reports.themes.get","/reports/themes/{report}","Read one saved recurring-issue report and its source snapshot, including reports older than the latest list. Requires current operational company access."),params:environment.extend({report:uuid}).strict()},
+  envRead("reports.themes.list","/reports/themes","Read the latest private recurring-issue reports, original case references, source coverage, generation status and human review. Generated themes are suggestions, not verified causes."),
+  {...envRead("reports.themes.generate","/reports/themes","Generate a private recurring-issue report from the admitted case-summary cohort. One immutable request ID prevents duplicate inference. No customer, knowledge or publication effect."),method:"POST",effect:"request",scope:"investigations.request",body:themePeriodInput},
+  {...envRead("reports.themes.review","/reports/themes/{report}/review","Record a human disposition on a saved recurring-issue theme at its expected revision. Retains the original analysis and source references; does not change cases or company knowledge."),method:"POST",effect:"write",scope:"workspace.write",params:environment.extend({report:uuid}).strict(),body:themeReviewInput},
+
   { ...read("support.policy.read", `${companyPath}/support-policy`, "Read business hours, holidays, response commitments and scheduled policy revisions."), scope: "cases.read", alsoScope: "setup" },
   write("support.policy.update", `${companyPath}/support-policy`, "Save business hours and response commitments with the expected revision and an effective date.", policyInput),
   { ...read("saved_replies.list", `${companyPath}/saved-replies`, "Read company saved replies, optionally including retired replies."), scope: "cases.read", alsoScope: "setup", query: z.object({ retired: yesNo.optional() }).strict() },
