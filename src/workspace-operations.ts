@@ -1,3 +1,4 @@
+import { serviceSampleQuery } from "./schemas/service-samples.ts";
 // Public workspace operations; transport/authentication stay in the shared catalog.
 import { z } from "zod";
 import type { Operation } from "./contract.ts";
@@ -59,6 +60,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
   { ...envRead("cases.assignment.read", "/cases/{case}/assignment", "Read a case's issue owner, plan reviewer and eligible teammates."), params: environment.extend({ case: uuid }).strict() },
   { ...write("cases.assignment.update", `${environmentPath}/cases/{case}/assignment`, "Assign an issue owner or plan reviewer with the previous owner as a conflict check. Does not grant roles or approve a plan.", z.object({ requestId: uuid.nullable(), memberId: uuid.nullable(), previous: uuid.nullable() }).strict()), params: environment.extend({ case: uuid }).strict(), ownership: "environment", scope: "workspace.write", alsoScope: "setup" },
   envRead("reports.credits", "/reports/credits", "Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone."),
+  { ...envRead("reports.samples.list", "/reports/samples", "Read paginated original issue/message references behind service counts and timing samples, with date/channel/hour filters in the company timezone. No messages are sent or marked read."), query:serviceSampleQuery },
   envRead("reports.service_metrics", "/reports/service-metrics", "Read response and resolution metrics, 90-day daily issue/message and timing trends, and weekday/hour incoming-message heatmaps in the company timezone. Missing timings stay unmeasured."),
   envRead("reports.delivery", "/reports/delivery", "Read delivery attempts, failures and recorded results. Does not retry a delivery."),
   envRead("reports.commitments", "/reports/commitments", "Read outstanding customer promises and unfinished work."),
