@@ -4,6 +4,14 @@ Generated from the operation catalog. The hosted deployment and your granted per
 
 | Tool | Required permission | Purpose |
 | --- | --- | --- |
+| `summer_github_connection_read` | setup | Read the company GitHub installation, selected repositories/folders and cached commit status. Makes no GitHub request and returns no credentials. |
+| `summer_github_connection_start` | setup | Get the Summer browser URL for a company administrator to install and authorize the read-only GitHub App. Does not grant access or connect an installation by itself. |
+| `summer_github_repositories_list` | setup | List repositories available to this company GitHub installation. Provider metadata read; no file content. |
+| `summer_github_folders_list` | setup | Browse repository folders at a branch or commit before selecting access. |
+| `summer_github_sources_save` | setup | Choose repository branches/commits and allowed folders. A dot selects the whole repository. Replaces selections with an expected version and invalidates old cached access. Does not sync code. |
+| `summer_github_sources_sync` | setup | Refresh the selected repository code cache once from GitHub. Reuses the cache for an unchanged commit; sandbox startup never pulls GitHub. |
+| `summer_github_sources_read` | setup | List cached source paths, or read one cached file with path. Only currently selected company folders are available. No live GitHub call or credentials. |
+| `summer_github_connection_disconnect` | setup | Disconnect this company/environment GitHub source access and remove its cached archives. |
 | `summer_support_policy_read` | cases.read | Read business hours, holidays, response commitments and scheduled policy revisions. |
 | `summer_support_policy_update` | setup | Save business hours and response commitments with the expected revision and an effective date. |
 | `summer_saved_replies_list` | cases.read | Read company saved replies, optionally including retired replies. |

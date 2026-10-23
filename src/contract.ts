@@ -1,3 +1,4 @@
+import { GITHUB_OPERATIONS } from './github-operations.ts';
 import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
 // Summer developer contract: scopes, operations, ownership and error codes.
 // The API router, MCP tools, OpenAPI document and CLI help are derived from
@@ -211,6 +212,7 @@ const runsQuery = z.object({
 }).strict();
 
 export const OPERATIONS: Operation[] = [
+  ...GITHUB_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
   ...INTERCOM_OPERATIONS,
   // Account: any connection, including a person whose access is pending.
