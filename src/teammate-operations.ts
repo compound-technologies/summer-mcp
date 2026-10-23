@@ -14,6 +14,7 @@ export const teammateCreateInput = z.discriminatedUnion("kind", [
     first_name: z.string().trim().min(1).max(30),
     last_name: z.string().trim().min(1).max(30),
     avatar_url: avatarUrl.nullable().optional(),
+    use_suggested_photo: z.boolean().optional().describe("For a name from teammates.names.list: give the teammate that name's suggested photo. Summer stores it like an upload, so it also becomes the Slack photo when Slack is connected. Ignores avatar_url."),
     reason,
   }).strict().describe("Summer gives the teammate first.last@gosummer.ai and keeps its mailbox."),
   z.object({
@@ -36,7 +37,7 @@ export const teammateUpdateInput = z.object({
 
 export const TEAMMATE_OPERATIONS: Operation[] = [
   { id: "teammates.names.list", method: "GET", path: `${base}/names`, scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "C", params: company,
-    summary: "List suggested female and gender-neutral teammate names whose gosummer.ai address is still free. Any typed first and last name also works." },
+    summary: "List suggested female and gender-neutral teammate names whose gosummer.ai address is still free. Each has a suggested photo_url to show; create with use_suggested_photo: true to add that name, address and photo together. Any typed first and last name also works." },
   { id: "teammates.list", method: "GET", path: base, scope: "setup", ownership: "company", effect: "read", mcp: "full", release: "C", params: company,
     summary: "List the company's teammates with their address, photo, status, unread mail count and Slack connection." },
   { id: "teammates.create", destructive: false, method: "POST", path: base, scope: "setup", ownership: "company", effect: "write", mcp: "full", release: "C", params: company, body: teammateCreateInput,
