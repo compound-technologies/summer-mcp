@@ -56,8 +56,8 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_agent_exclusions_list` | cases.read | Read the company's sender exclusions and original edit history. Changes retain human approval. |
 | `summer_messenger_conversations_list` | cases.read | Search and filter the complete Messenger inbox, including visitor conversations without Ops cases. |
 | `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |
-| `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice, vocabulary and change history. Starts no call. |
-| `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice and vocabulary with the expected revision. Starts no call. |
+| `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice service, voices, vocabulary and change history. Starts no call. |
+| `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice service, voice and vocabulary with the expected revision. provider is elevenlabs (default) or openai_live (OpenAI GPT-Live); omitted provider or openai_voice keeps the saved value. Starts no call. |
 | `summer_imports_intercom_list` | setup | Read Intercom migration previews, saved progress, counts, errors and Summer inbox destinations. Does not start an import. |
 | `summer_imports_intercom_preview` | setup | Check the saved Intercom key against a workspace and preview contact/conversation counts. Save the selected Summer inbox and explicit account-matching choice. Import nothing; send nothing. |
 | `summer_imports_intercom_control` | setup | Start, pause, resume or rescan an Intercom migration with its current version. Optional incremental sync reconciles the same original IDs; no replies, notifications or agent runs. Names/email never verify an account. |
