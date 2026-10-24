@@ -204,6 +204,12 @@ const caseSearchQuery = z.object({
   include_test: yesNo.optional().describe("Include staff and test accounts"),
   limit: z.coerce.number().int().min(1).max(100).optional().describe("Default 25"),
 }).strict();
+const plansQuery = z.object({
+  show: z.enum(["executed", "all"]).optional().describe("executed (default): plans whose approved work was sent to run; all: every published plan"),
+  approver: z.enum(["any", "person", "agent"]).optional().describe("agent: approved through a person's delegated API, CLI or MCP connection"),
+  call: z.enum(["any", "would_run", "would_not_run", "no_call"]).optional().describe("The agent's own call on running the plan without approval, judged against the company's autonomy rubric"),
+  cursor: z.string().regex(/^[1-9]\d{0,5}$/).optional(),
+}).strict();
 const runsQuery = z.object({
   status: z.enum(["all", "approval", "active", "queued", "review", "completed", "stopped", "waiting"]).optional().describe("approval: plans waiting for human approval; review: runs that need a person to check them"),
   kind: z.enum(["all", "investigation", "execution"]).optional(),
@@ -442,6 +448,9 @@ export const OPERATIONS: Operation[] = [
   { id: "runs.list", method: "GET", path: "/companies/{company}/environments/{environment}/runs", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
     summary: "List investigation and execution runs across cases, newest first, with status, plan approval and date filters.", params: companyEnv,
     query: runsQuery },
+  { id: "plans.list", method: "GET", path: "/companies/{company}/environments/{environment}/plans", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
+    summary: "List published plans, newest first: who approved each (a person or an agent), whether it ran and was checked, the agent's self-review and its own call on running the plan without approval. Includes totals comparing the agent's calls with people's decisions. Read-only.", params: companyEnv,
+    query: plansQuery },
   { id: "investigations.request", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "investigations.request", ownership: "environment", effect: "request", mcp: "full", release: "B",
     summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. Completion is not approval.", params: caseParams,
     body: z.discriminatedUnion("kind", [
