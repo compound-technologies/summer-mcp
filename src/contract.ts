@@ -206,7 +206,7 @@ const caseSearchQuery = z.object({
 }).strict();
 const plansQuery = z.object({
   show: z.enum(["executed", "all"]).optional().describe("executed (default): plans whose approved work was sent to run; all: every published plan"),
-  approver: z.enum(["any", "person", "agent"]).optional().describe("agent: approved through a person's delegated API, CLI or MCP connection"),
+  approver: z.enum(["any", "person", "agent", "auto_run"]).optional().describe("agent: approved through a person's delegated API, CLI or MCP connection. auto_run: approved by a channel's auto-run setting"),
   call: z.enum(["any", "would_run", "would_not_run", "no_call"]).optional().describe("The agent's own call on running the plan without approval, judged against the company's autonomy rubric"),
   cursor: z.string().regex(/^[1-9]\d{0,5}$/).optional(),
 }).strict();
@@ -387,14 +387,14 @@ export const OPERATIONS: Operation[] = [
     summary: "Check forwarding, the DNS record and sending status for one support email address now. Records the latest sending status; sends nothing.",
     params: companyEnv.extend({ channel: uuid }).strict() },
   { id: "messenger.autonomy.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/autonomy", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
-    summary: "Read autonomy for website chat, texting and email: whether the assistant gives fast replies and how sure it must be to answer alone, and the auto-run plan settings. Auto-run cannot be turned on yet.", params: companyEnv },
+    summary: "Read autonomy for website chat, texting and email: whether the assistant gives fast replies and how sure it must be to answer alone, and the auto-run plan settings, including who turned auto-run on.", params: companyEnv },
   { id: "messenger.autonomy.update", destructive: false, method: "PUT", path: "/companies/{company}/environments/{environment}/messenger/autonomy/{channel}", scope: "setup", ownership: "environment", effect: "write", mcp: "full", release: "A",
     summary: "Change one channel's autonomy with the expected version. With fast reply on, the assistant handles that channel's messages and starts a plan only when it escalates. A lower threshold gives it more autonomy.",
     params: companyEnv.extend({ channel: z.enum(["chat", "sms", "email"]) }).strict(), body: z.object({ version: z.number().int().min(0),
       fast_reply_enabled: z.boolean().optional().describe("The assistant answers this channel's messages."),
       fast_reply_threshold: z.number().int().min(0).max(100).optional().describe("How sure the assistant must be to answer alone, 0 to 100. Lower means more autonomy. Default 50."),
-      auto_run_enabled: z.literal(false).optional().describe("Auto-run of approved plans is not available yet."),
-      auto_run_threshold: z.number().int().min(0).max(100).optional().describe("Saved for auto-run plans. Default 50."),
+      auto_run_enabled: z.boolean().optional().describe("Run this channel's plans without waiting for a person when the agent says it would run the plan, all five self-review checks pass and it is at least auto_run_threshold sure. Plans with A/B/C options, money, identity or clinical work always wait for a person. The admin who turns it on is the recorded approver. Default off."),
+      auto_run_threshold: z.number().int().min(0).max(100).optional().describe("How sure the agent must be before a plan runs alone, 0 to 100. Lower means more autonomy. Default 50."),
     }).strict() },
   { id: "messenger.sms.read", method: "GET", path: "/companies/{company}/environments/{environment}/messenger/sms", scope: "setup", ownership: "environment", effect: "read", mcp: "full", release: "A",
     summary: "Read texting lines: each line's persona name, how it hands work to the team, reply hours and whether texts join conversations, plus recent send problems and the lines this deployment can text from. Whether the assistant replies is a channel autonomy setting.", params: companyEnv },
