@@ -72,6 +72,8 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
   envRead("reports.credits", "/reports/credits", "Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone."),
   { ...envRead("reports.samples.list", "/reports/samples", "Read paginated original issue/message references behind service counts and timing samples, with date/channel/hour filters in the company timezone. No messages are sent or marked read."), query:serviceSampleQuery },
   envRead("reports.service_metrics", "/reports/service-metrics", "Read response and resolution metrics, 90-day daily issue/message and timing trends, and weekday/hour incoming-message heatmaps in the company timezone. Missing timings stay unmeasured."),
+  { ...envRead("reports.agent_timing", "/reports/agent-timing", "Read how long approved agent runs take: approval to start, each startup and work phase, and each step by action and category, with medians, 90th percentiles and recent runs. Phases that were not recorded stay unmeasured. Starts no work."),
+    query: z.object({ days: z.union([z.enum(["7", "30", "90"]), z.literal(7), z.literal(30), z.literal(90)]).optional() }).strict() },
   envRead("reports.delivery", "/reports/delivery", "Read delivery attempts, failures and recorded results. Does not retry a delivery."),
   envRead("reports.commitments", "/reports/commitments", "Read outstanding customer promises and unfinished work."),
   { ...envRead("human_tasks.list", "/human-tasks", "Read work that Summer agents or blocked approvals asked a person to do, with owners, due times, recorded outcomes and change history for one selected task."), query: z.object({

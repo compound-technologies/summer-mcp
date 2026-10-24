@@ -48,6 +48,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_reports_credits` | cases.read | Read all-time and month-to-date credits, pending reservations and monthly usage in the company timezone. |
 | `summer_reports_samples_list` | cases.read | Read paginated original issue/message references behind service counts and timing samples, with date/channel/hour filters in the company timezone. No messages are sent or marked read. |
 | `summer_reports_service_metrics` | cases.read | Read response and resolution metrics, 90-day daily issue/message and timing trends, and weekday/hour incoming-message heatmaps in the company timezone. Missing timings stay unmeasured. |
+| `summer_reports_agent_timing` | cases.read | Read how long approved agent runs take: approval to start, each startup and work phase, and each step by action and category, with medians, 90th percentiles and recent runs. Phases that were not recorded stay unmeasured. Starts no work. |
 | `summer_reports_delivery` | cases.read | Read delivery attempts, failures and recorded results. Does not retry a delivery. |
 | `summer_reports_commitments` | cases.read | Read outstanding customer promises and unfinished work. |
 | `summer_human_tasks_list` | cases.read | Read work that Summer agents or blocked approvals asked a person to do, with owners, due times, recorded outcomes and change history for one selected task. |
