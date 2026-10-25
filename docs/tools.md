@@ -62,7 +62,7 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_human_tasks_update` | workspace.write | Complete, dismiss, reopen or assign a human task with its expected version. Records the person and outcome. Does not approve a plan or change customer records. |
 | `summer_agent_exclusions_list` | cases.read | Read the company's sender exclusions and original edit history. Changes retain human approval. |
 | `summer_messenger_conversations_list` | cases.read | Search and filter the complete Messenger inbox, including visitor conversations without Ops cases. |
-| `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts and attachments without marking the chat read. |
+| `summer_messenger_conversations_get` | cases.read | Read original Messenger messages with saved human sender_display_name, contact form details, read receipts, attachments and timestamped page_context (current page and UI controls) without marking the chat read. |
 | `summer_pharmacy_calls_settings_read` | cases.read | Read demo pharmacy-call voice service, voices, vocabulary and change history. Starts no call. |
 | `summer_pharmacy_calls_settings_update` | setup | Save the demo pharmacy-call voice service, voice and vocabulary with the expected revision. provider is elevenlabs (default) or openai_live (OpenAI GPT-Live); omitted provider or openai_voice keeps the saved value. Starts no call. |
 | `summer_imports_intercom_list` | setup | Read Intercom migration previews, saved progress, counts, errors and Summer inbox destinations. Does not start an import. |
