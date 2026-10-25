@@ -1,6 +1,6 @@
 {
   "name": "@gosummerai/mcp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "description": "Summer's MCP transport and tool contract for telehealth support.",
   "type": "module",
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1",

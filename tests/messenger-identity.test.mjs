@@ -17,3 +17,18 @@ test("an identity can use a company teammate's photo or a suggested teammate pho
  assert.equal(messengerIdentitySchema.parse({custom_name:"Clara Hayes",suggested_photo:"clara.hayes"}).suggested_photo,"clara.hayes");
  for(const value of [{teammate_id:"not-a-uuid"},{suggested_photo:"../etc/passwd"},{suggested_photo:"https://example.test/a.jpg"},{suggested_photo:"Maya.Bennett"}])assert.equal(messengerIdentitySchema.safeParse(value).success,false);
 });
+
+
+test("first-name display keeps the employee link, survives profile renames and leaves AI names intact", () => {
+ const identity = { mode: "human", name_style: "neutral", custom_name: "Julia Park", teammate_id: "8dece789-f3da-43d0-947a-cd91774c7b34", name_format: "first" };
+ const parsed = messengerIdentitySchema.parse(identity);
+ assert.equal(messengerAgentName(parsed), "Julia");
+ assert.equal(parsed.teammate_id, identity.teammate_id);
+ assert.equal(parsed.custom_name, "Julia Park");
+ assert.equal(messengerAgentName({ ...parsed, custom_name: "Julia Reed" }), "Julia");
+ assert.equal(messengerAgentName({ ...parsed, name_format: "full" }), "Julia Park");
+ assert.equal(messengerAgentName({ ...parsed, mode: "ai", custom_name: "Summer AI" }), "Summer AI");
+ assert.equal(messengerIdentitySchema.safeParse({ ...parsed, name_format: "nickname" }).success, false);
+ const settings = schemas.messengerSettings.parse({ enabled: true, guests_enabled: false, display_name: "Northstar Care", allowed_origins: ["https://clinic.example.test"], privacy_url: "", fallback_url: "", office_hours: "", identity });
+ assert.equal(settings.identity.name_format, "first");
+});

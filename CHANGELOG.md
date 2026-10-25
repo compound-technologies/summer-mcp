@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+- Add company knowledge change history, including before/after revisions and recorded provenance.
+- Refresh the reviewed operation catalog for routing, delivery, guide releases and messenger identity settings.
+- Keep exported tests synthetic and report the current catalog version to connected clients.
+
 ## 0.2.2
 
 - Include tool display titles in annotations for directory clients.

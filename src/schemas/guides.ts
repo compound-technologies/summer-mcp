@@ -23,8 +23,12 @@ export const saveArticleInput = z.object({
   content: z.string().trim().min(1).max(500000), asset_ids: z.array(z.uuid()).max(100),
   source_url: publicUrl, verified_at: z.iso.datetime({ offset: true }).nullable().default(null), reason,
 }).strict();
+// A release replaces the whole published set. Every currently published article
+// is either kept in `articles` or named in `unpublish`, so a partial list can
+// never take articles offline by accident.
 export const publishGuideInput = z.object({
-  expected_version: version, articles: z.array(z.object({ id: guideId, revision: z.number().int().positive() }).strict()).min(1).max(200), reason,
+  expected_version: version, articles: z.array(z.object({ id: guideId, revision: z.number().int().positive() }).strict()).min(1).max(200),
+  unpublish: z.array(guideId).max(200).default([]), reason,
 }).strict();
 export const unpublishGuideInput = z.object({ expected_version: version, reason }).strict();
 export const createAssetInput = z.object({
