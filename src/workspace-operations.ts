@@ -89,7 +89,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
     scope: "cases.read", alsoScope: "setup",
     query: z.object({
       days: z.union([z.enum(["7", "30", "90"]), z.literal(7), z.literal(30), z.literal(90)]).optional().describe("Period. Default 7 days."),
-      route: z.enum(["investigate", "ignore", "file", "open_ticket", "skipped"]).optional().describe("Only one outcome. skipped means ignore or file: no agent ran."),
+      route: z.enum(["investigate", "resolve_customer", "ignore", "file", "open_ticket", "skipped"]).optional().describe("Only one outcome. skipped means ignore or file: no agent ran."),
       stage: z.enum(["intake", "activity"]).optional().describe("intake: new emails. activity: new ticket activity."),
       rule: z.string().regex(/^[a-z0-9-]{3,60}$/).optional().describe("Only decisions where this rule matched."),
       before: z.string().regex(/^[1-9]\d{0,18}$/).optional().describe("The nextBefore value from the previous page."),

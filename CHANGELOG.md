@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.6
+
+- Add explicit company execution-policy preview/publication and research-only pending-plan refresh.
+- Keep conversation replies separate and expose cohort coverage and hold reasons.
+- Share policy schemas across public clients and runtime validation; refresh the live catalog version without changing saved OAuth grants.
+
 ## 0.2.5
 
 - Add company knowledge change history, including before/after revisions and recorded provenance.
