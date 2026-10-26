@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Remove `review_only` from `investigations.request`. Every new plan follows the company's auto-run rules; set the execution policy to review to keep plans with people.
+- `autonomy.plans.refresh` no longer holds the plans it refreshes.
+
 ## 0.2.7
 
 - Add `summer_investigations_stop` for an exact case-owned investigation, preserving history and distinguishing a requested stop from completed cancellation.

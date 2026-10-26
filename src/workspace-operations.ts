@@ -46,7 +46,7 @@ export const routerRulesTestInput = z.object({
   intake: z.object({ senderEmail: z.string().max(320), subject: z.string().max(1000), body: z.string().max(20_000), messageCount: z.number().int().min(1).max(1000) }).strict().optional()
     .describe("A sample new email to route."),
   activity: z.array(z.object({ source: z.string(), orderStatus: z.string().nullable().optional(), eventKind: z.string().nullable().optional(),
-    eventSummary: z.string().nullable().optional(), handledBy: z.enum(["welcome_yes_credit", "address_confirmation_yes"]).nullable().optional() }).strict()).min(1).max(50).optional()
+    eventSummary: z.string().nullable().optional(), handledBy: z.enum(["welcome_yes_credit", "address_confirmation_yes", "customer_thanks"]).nullable().optional() }).strict()).min(1).max(50).optional()
     .describe("Sample ticket activity items to route."),
 }).strict();
 const read = (id: string, path: string, summary: string, params: Operation["params"] = company, scope: "setup" | "cases.read" = "setup"): Operation =>
