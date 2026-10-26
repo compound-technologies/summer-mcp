@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7
+
+- Add `summer_investigations_stop` for an exact case-owned investigation, preserving history and distinguishing a requested stop from completed cancellation.
+- Document requesting a replacement with updated guidance and `review_only` after the old run ends.
+- Include each order's supply facts in the case-read reference.
+
 ## 0.2.6
 
 - Add explicit company execution-policy preview/publication and research-only pending-plan refresh.
