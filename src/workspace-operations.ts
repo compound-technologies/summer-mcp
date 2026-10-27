@@ -34,7 +34,7 @@ export const routingSettingsSchema = z.object({ version: z.number().int().min(0)
   for (const kind of ["issue", "review", "task"] as const) if (input[`${kind}_mode`] === "default" && input[`${kind}_members`]?.length !== 1)
     ctx.addIssue({ code: "custom", path: [`${kind}_members`], message: "Choose the routing team." });
 });
-const routerRulesDoc = "The rules document: { version: 1, intake: [...], activity: [...] }. Intake rules { id, description, enabled?, route: \"file\", emailType, match: { senderDomains?, senderAddresses?, onlyMessage?, subject?, subjectNot?, body?, bodyNot? } } file a new email without a ticket. Activity rules { id, description, enabled?, route: \"ignore\", match: { sources, orderStatuses?, eventKinds?, eventSummary?, handledBy? } } skip the agent when every new ticket item matches. Patterns are case-insensitive regular expressions.";
+const routerRulesDoc = "The rules document: { version: 1, intake: [...], activity: [...] }. Intake rules { id, description, enabled?, route: \"file\", emailType, match: { senderDomains?, senderAddresses?, onlyMessage?, automatic?, vendor?, subject?, subjectNot?, body?, bodyNot? } } file a new email without a ticket; route: \"join_ticket\" (no emailType) adds a vendor email about one order number to the open ticket that already holds that number, and opens a ticket otherwise. Activity rules { id, description, enabled?, route: \"ignore\", match: { sources, orderStatuses?, eventKinds?, eventSummary?, handledBy? } } skip the agent when every new ticket item matches. automatic: true matches mail a machine wrote; vendor: true matches mail from one of the company's pharmacies or clinical partners. Patterns are case-insensitive regular expressions.";
 export const routerRulesUpdateInput = z.object({
   version: z.number().int().min(0).describe("The version you read. A newer saved version refuses the change."),
   rules: z.record(z.string(), z.unknown()).describe(routerRulesDoc),
@@ -46,7 +46,7 @@ export const routerRulesTestInput = z.object({
   intake: z.object({ senderEmail: z.string().max(320), subject: z.string().max(1000), body: z.string().max(20_000), messageCount: z.number().int().min(1).max(1000) }).strict().optional()
     .describe("A sample new email to route."),
   activity: z.array(z.object({ source: z.string(), orderStatus: z.string().nullable().optional(), eventKind: z.string().nullable().optional(),
-    eventSummary: z.string().nullable().optional(), handledBy: z.enum(["welcome_yes_credit", "address_confirmation_yes", "customer_thanks"]).nullable().optional() }).strict()).min(1).max(50).optional()
+    eventSummary: z.string().nullable().optional(), handledBy: z.enum(["welcome_yes_credit", "customer_acknowledgement", "automatic_care_notice", "team_bookkeeping"]).nullable().optional() }).strict()).min(1).max(50).optional()
     .describe("Sample ticket activity items to route."),
 }).strict();
 const read = (id: string, path: string, summary: string, params: Operation["params"] = company, scope: "setup" | "cases.read" = "setup"): Operation =>
@@ -90,7 +90,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
     scope: "cases.read", alsoScope: "setup",
     query: z.object({
       days: z.union([z.enum(["7", "30", "90"]), z.literal(7), z.literal(30), z.literal(90)]).optional().describe("Period. Default 7 days."),
-      route: z.enum(["investigate", "resolve_customer", "ignore", "file", "open_ticket", "skipped"]).optional().describe("Only one outcome. skipped means ignore or file: no agent ran."),
+      route: z.enum(["investigate", "resolve_customer", "ignore", "file", "join_ticket", "open_ticket", "skipped"]).optional().describe("Only one outcome. skipped means ignore or file: no agent ran."),
       stage: z.enum(["intake", "activity"]).optional().describe("intake: new emails. activity: new ticket activity."),
       rule: z.string().regex(/^[a-z0-9-]{3,60}$/).optional().describe("Only decisions where this rule matched."),
       before: z.string().regex(/^[1-9]\d{0,18}$/).optional().describe("The nextBefore value from the previous page."),

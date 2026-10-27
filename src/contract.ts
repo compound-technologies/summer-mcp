@@ -1,5 +1,6 @@
 import { executionPolicySaveBody } from "./autonomy.ts";
 import { operatorGuidance } from "./schemas/workflows.ts";
+import { CASE_TEACHING_OPERATIONS } from "./case-teaching-operations.ts";
 import { GITHUB_OPERATIONS } from './github-operations.ts';
 import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
 // Summer developer contract: scopes, operations, ownership and error codes.
@@ -223,6 +224,7 @@ const runsQuery = z.object({
 export const OPERATIONS: Operation[] = [
   ...GITHUB_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
+  ...CASE_TEACHING_OPERATIONS,
   ...INTERCOM_OPERATIONS,
   ...TEAMMATE_OPERATIONS,
   // Account: any connection, including a person whose access is pending.
