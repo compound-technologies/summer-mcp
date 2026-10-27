@@ -127,9 +127,9 @@ Generated from the operation catalog. The hosted deployment and your granted per
 | `summer_credentials_set` | setup | Save one selected credential value or Doppler reference. Replacing an active credential needs credentials.replace. Returns metadata only. Secret transfer uses a local CLI handoff. |
 | `summer_knowledge_list` | setup | List current company knowledge documents. Knowledge is company-wide, not per environment. Pass tag to list documents with that tag, such as an integration name (slack, beluga, mdi), which is how Summer shows knowledge related to an integration. |
 | `summer_knowledge_create` | setup | Upload a new company knowledge document with original revision history. The shared library is used by all roles and environments. Existing document IDs are refused. API reference: https://api.gosummer.ai/v1/openapi.json |
-| `summer_knowledge_changes` | setup | Read company knowledge changes from people, delegated API/MCP connections and Summer agent plans, with before/after revisions and original provenance. |
+| `summer_knowledge_changes` | setup | Read company knowledge changes from people, delegated API/MCP connections and Summer agent plans, with before/after revisions, GPT change summaries, summary processing state and original provenance. Set actor=summer for Summer plans and Teach Summer edits. |
 | `summer_knowledge_get` | setup | Read one company knowledge document and its current revision. |
-| `summer_knowledge_history` | setup | Read the edit history of a company knowledge document. |
+| `summer_knowledge_history` | setup | Read the edit history of a company knowledge document with GPT change summaries and processing state. Set actor=summer for Summer plans and Teach Summer edits. |
 | `summer_knowledge_edit` | setup | Edit an existing company knowledge document with the expected revision and a reason. Affects every environment and later runs. |
 | `summer_messenger_installations_list` | setup | List Messenger installations in this environment. Signing keys are never returned. |
 | `summer_messenger_installations_create` | setup | Create an installation with a client-chosen ID. The one-time signing key goes to the trusted local helper, never to model-visible output. Secret transfer uses a local CLI handoff. |
