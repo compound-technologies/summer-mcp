@@ -31,6 +31,13 @@ export const phoneSettingsInput = z
     enabled: z.boolean(),
     numbers: z.array(number).max(20),
     menu: z.record(z.string().regex(/^[0-9*#]$/), callType),
+    /** Where "a person, please" transfers the caller. Omit to keep the saved
+     * number; null turns transfers off. */
+    transfer_e164: z
+      .string()
+      .regex(/^\+[1-9][0-9]{7,14}$/)
+      .nullable()
+      .optional(),
   })
   .strict()
   .superRefine((input, ctx) => {
@@ -39,6 +46,16 @@ export const phoneSettingsInput = z
         code: "custom",
         path: ["numbers"],
         message: "Choose each Quo number once.",
+      });
+    if (
+      input.transfer_e164 &&
+      input.numbers.some((n) => n.number === input.transfer_e164)
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["transfer_e164"],
+        message:
+          "Transfer to a number that rings people, not a Quo number that forwards to Summer.",
       });
   });
 export type PhoneSettingsInput = z.infer<typeof phoneSettingsInput>;
@@ -52,6 +69,7 @@ export type PhoneSettingsView = {
     updated_at: string;
     numbers: PhoneSettingsInput["numbers"];
     menu: PhoneSettingsInput["menu"];
+    transfer_e164: string | null;
   }>;
   calls: Array<{
     id: string;
