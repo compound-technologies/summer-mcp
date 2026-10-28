@@ -1,5 +1,5 @@
 import { executionPolicySaveBody } from "./autonomy.ts";
-import { operatorGuidance } from "./schemas/workflows.ts";
+import { guidanceScope, operatorGuidance } from "./schemas/workflows.ts";
 import { CASE_TEACHING_OPERATIONS } from "./case-teaching-operations.ts";
 import { GITHUB_OPERATIONS } from './github-operations.ts';
 import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
@@ -14,6 +14,7 @@ import { guideId, saveGuideInput, saveArticleInput, publishGuideInput, unpublish
 import { INTERCOM_OPERATIONS } from "./intercom-operations.ts";
 import { TEAMMATE_OPERATIONS } from "./teammate-operations.ts";
 import { WORKSPACE_OPERATIONS, caseListQuery } from "./workspace-operations.ts";
+import { SCHEDULED_JOB_OPERATIONS } from "./scheduled-job-operations.ts";
 
 export const API_VERSION = "2026-10-20";
 export const MCP_PROTOCOL_VERSIONS = ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"] as const;
@@ -31,7 +32,7 @@ export const SCOPES = {
   },
   "investigations.request": {
     title: "Request investigations",
-    description: "Ask Summer to investigate a case, revise a plan or stop an investigation. Plans follow the company's review and auto-run rules.",
+    description: "Ask Summer to investigate a case, revise a plan, stop an investigation or cancel a plan's text while it waits to send. Plans follow the company's review and auto-run rules.",
     admin: false,
   },
   "actions.prepare": {
@@ -66,7 +67,7 @@ export const SCOPES = {
   },
   "automation.manage": {
     title: "Manage automation",
-    description: "Create, rotate and disable company service accounts and signed webhooks.",
+    description: "Configure scheduled agent jobs, run them now, and create, rotate and disable company service accounts and signed webhooks.",
     admin: true,
   },
   // Service-account scopes. People reach events through setup.
@@ -154,7 +155,7 @@ export const schemas = {
     enabled: z.boolean().describe("Show the voice button in chat for the chosen audience."),
     audience: z.enum(["accounts", "signed_in", "everyone"]).describe("accounts: only allowed_subjects; signed_in: any verified account; everyone: visitors too."),
     allowed_subjects: z.array(z.string().trim().min(1).max(200)).max(50).describe("Verified account subjects your site sends at sign-in. Used when audience is accounts."),
-    provider: z.enum(["openai", "openai_live", "elevenlabs"]).optional().describe("Voice service. openai (OpenAI Realtime) is the default. openai_live is OpenAI GPT-Live, which listens while it speaks and hands questions to Summer. Omit to keep the saved choice."),
+    provider: z.enum(["openai", "openai_live", "elevenlabs"]).optional().describe("Voice service. openai_live (OpenAI GPT-Live) is the default: it listens while it speaks and hands questions to Summer. openai is OpenAI Realtime. Omit to keep the saved choice."),
     voice_id: z.string().regex(/^[A-Za-z0-9]{8,40}$/).describe("ElevenLabs voice: one of the voices listed by messenger.voice.read."),
     openai_voice: z.enum(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"]).optional().describe("OpenAI voice for openai and openai_live: one of the openai_voices listed by messenger.voice.read. Omit to keep the saved choice."),
     instructions: z.string().max(20000).describe("Optional company instructions added to the standard voice instructions."),
@@ -224,6 +225,7 @@ const runsQuery = z.object({
 export const OPERATIONS: Operation[] = [
   ...GITHUB_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
+  ...SCHEDULED_JOB_OPERATIONS,
   ...CASE_TEACHING_OPERATIONS,
   ...INTERCOM_OPERATIONS,
   ...TEAMMATE_OPERATIONS,
@@ -530,10 +532,10 @@ export const OPERATIONS: Operation[] = [
     summary: "List published plans, newest first: who approved each (a person or an agent), whether it ran and was checked, the agent's self-review, its own call on running the plan without approval, and auto_run: what the channel's auto-run setting did or would do with it (outcome ran/would_run/would_wait, the deciding reason, channel, on/off, confidence bar and any saved auto-run decision), and runs_as: code when approved work runs, or ran, without an agent (a plan that only resolves the case, or sends one reply and then resolves it), otherwise agent. Includes totals comparing the agent's calls with people's decisions. Read-only.", params: companyEnv,
     query: plansQuery },
   { id: "investigations.request", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations", scope: "investigations.request", ownership: "environment", effect: "request", mcp: "full", release: "B",
-    summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. The new plan follows the company's auto-run rules; to make every plan wait for a person, turn auto-run off in the execution policy.", params: caseParams,
+    summary: "Ask Summer to investigate the case, or revise a saved plan with feedback. The new plan follows the company's auto-run rules; to make every plan wait for a person, turn auto-run off in the execution policy. Guidance and feedback apply to this request only; later plans read them as past context. Set guidance_scope to standing for an instruction that applies to every later plan for this customer.", params: caseParams,
     body: z.discriminatedUnion("kind", [
-      z.object({ kind: z.literal("investigate"), guidance:operatorGuidance.optional() }).strict(),
-      z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: operatorGuidance.min(1) }).strict(),
+      z.object({ kind: z.literal("investigate"), guidance:operatorGuidance.optional(), guidance_scope: guidanceScope.optional().describe("request (default): this request only. standing: every later plan for this customer. Ignored without guidance.") }).strict(),
+      z.object({ kind: z.literal("revise"), plan_request_id: uuid, feedback: operatorGuidance.min(1), guidance_scope: guidanceScope.optional().describe("request (default): this revision only. standing: every later plan for this customer.") }).strict(),
     ]) },
 
   { id: "cases.chat.list", method: "GET", path: "/companies/{company}/environments/{environment}/cases/{case}/chat", scope: "cases.read", ownership: "environment", effect: "read", mcp: "full", release: "B",
