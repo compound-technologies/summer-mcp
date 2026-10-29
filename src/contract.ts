@@ -552,12 +552,14 @@ export const OPERATIONS: Operation[] = [
     params: caseParams.extend({ run: uuid }).strict(), body: z.object({}).strict() },
 
   { id: "investigations.plan.edit", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/investigations/{request}/wording", scope: "investigations.request", ownership: "environment", effect: "write", mcp: "full", release: "B",
-    summary: "Edit wording in the current saved plan at its expected revision, including proposed company knowledge text. Preserves targets, amounts, feedback sources and selected option. Invalidates prepared approval; does not apply knowledge or customer changes.",
+    summary: "Edit wording or skip steps in the current saved plan at its expected revision, including proposed company knowledge text. Step IDs are native for delegated work and effect:0, effect:1 and so on in the selected option's original order. Skipped steps stay in the plan, never run and are named to the executor. Returns every step and whether it is skipped. Preserves targets, amounts, feedback sources and selected option. Invalidates prepared approval; does not apply knowledge or customer changes.",
     params: caseParams.extend({ request: uuid }).strict(), body: z.object({
       expected_revision: z.number().int().nonnegative(),
-      edits: z.record(z.string().regex(/^(?:task|\d+\.(?:subject|text|body|content))$/), z.string().max(100000)).refine(value => Object.keys(value).length > 0 && Object.keys(value).length <= 100, "Supply between 1 and 100 existing wording fields."),
+      edits: z.record(z.string().regex(/^(?:task|\d+\.(?:subject|text|body|content))$/), z.string().max(100000)).refine(value => Object.keys(value).length > 0 && Object.keys(value).length <= 100, "Supply between 1 and 100 existing wording fields.").optional(),
+      skipped_steps: z.array(z.string().regex(/^(?:native|effect:\d{1,2})$/)).max(21).optional()
+        .describe("The complete set of steps to skip. Steps not listed run, including steps skipped earlier. An empty list restores every step. At least one step must remain."),
       reason: z.string().trim().min(1).max(1000),
-    }).strict() },
+    }).strict().refine(value => Boolean(value.edits) || Boolean(value.skipped_steps), "Supply wording edits, skipped steps or both.") },
 
   // Release C: exact approved execution through the existing boundary.
   { id: "actions.prepare", method: "POST", path: "/companies/{company}/environments/{environment}/cases/{case}/actions/prepare", scope: "actions.prepare", ownership: "environment", effect: "request", mcp: "full", release: "C",
