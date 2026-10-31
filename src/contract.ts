@@ -1,3 +1,4 @@
+import { ONBOARDING_OPERATIONS } from "./onboarding-operations.ts";
 import { executionPolicySaveBody, familyPolicyPreviewBody } from "./autonomy.ts";
 import { guidanceScope, operatorGuidance } from "./schemas/workflows.ts";
 import { CASE_TEACHING_OPERATIONS } from "./case-teaching-operations.ts";
@@ -223,6 +224,7 @@ const runsQuery = z.object({
 }).strict();
 
 export const OPERATIONS: Operation[] = [
+  ...ONBOARDING_OPERATIONS,
   ...GITHUB_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
   ...SCHEDULED_JOB_OPERATIONS,

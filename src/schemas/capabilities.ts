@@ -13,6 +13,6 @@ export const capabilityPath = z.object({
 const common = { id: capabilityDefinition.shape.id, expectedVersion: z.number().int().min(0) };
 export const capabilityInput = z.discriminatedUnion("kind", [
   z.object({ ...common, kind: z.literal("definition"), definition: capabilityDefinition, notes: z.string().trim().min(1).max(2000) }).strict(),
-  z.object({ ...common, kind: z.literal("review"), state: capabilityResult, notes: z.string().trim().min(1).max(2000), evidence: z.string().trim().max(2000) }).strict(),
+  z.object({ ...common, kind: z.literal("review"), state: capabilityResult, notes: z.string().trim().min(1).max(2000), evidence: z.string().trim().max(2000), connectionIds:z.array(z.string().uuid()).max(30).optional() }).strict(),
   z.object({ ...common, kind: z.literal("agent"), caseId: z.string().uuid() }).strict(),
 ]);
