@@ -3,6 +3,7 @@ import { executionPolicySaveBody, familyPolicyPreviewBody } from "./autonomy.ts"
 import { guidanceScope, operatorGuidance } from "./schemas/workflows.ts";
 import { CASE_TEACHING_OPERATIONS } from "./case-teaching-operations.ts";
 import { GITHUB_OPERATIONS } from './github-operations.ts';
+import { ACTION_OPERATIONS } from './action-operations.ts';
 import { messengerIdentitySchema, messengerLogoSchema } from "./schemas/messenger-identity.ts";
 // Summer developer contract: scopes, operations, ownership and error codes.
 // The API router, MCP tools, OpenAPI document and CLI help are derived from
@@ -226,6 +227,7 @@ const runsQuery = z.object({
 export const OPERATIONS: Operation[] = [
   ...ONBOARDING_OPERATIONS,
   ...GITHUB_OPERATIONS,
+  ...ACTION_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
   ...SCHEDULED_JOB_OPERATIONS,
   ...CASE_TEACHING_OPERATIONS,
