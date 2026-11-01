@@ -85,6 +85,7 @@ export type Environment = (typeof ENVIRONMENTS)[number];
 
 // Never part of any grant. Listed so clients and docs can say so precisely.
 export const HUMAN_ONLY = [
+  "Overriding queued-message sending hours with Send now",
   "Revealing a saved credential value",
   "Approving Summer platform access requests",
   "Ownership transfer and owner/admin role grants",
