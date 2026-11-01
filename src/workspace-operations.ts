@@ -1,3 +1,4 @@
+import { queuedMessagesQuery } from "./schemas/queued-messages.ts";
 import { phoneSettingsInput } from "./schemas/phone.ts";
 import { pharmacyDirectoryInput } from "./schemas/pharmacy-directory.ts";
 import { serviceSampleQuery } from "./schemas/service-samples.ts";
@@ -123,6 +124,7 @@ export const WORKSPACE_OPERATIONS: Operation[] = [
     query: z.object({ days: z.union([z.enum(["7", "30", "90"]), z.literal(7), z.literal(30), z.literal(90)]).optional() }).strict() },
   { ...envRead("reports.cancellations", "/reports/cancellations", "Read cancellation requests and how each ended: paused, renewal moved later, kept, cancelled, or a pause offered with no answer yet. The investigating agent marks each request; the approved plan option sets the outcome. revenue:true adds each saved plan's renewal amount and the paid renewals collected since the save (before refunds), read from live billing, plus gross totals. Changes nothing."),
     query: z.object({ days: z.union([z.enum(["30", "90", "365"]), z.literal(30), z.literal(90), z.literal(365)]).optional(), revenue: yesNo.optional() }).strict() },
+  { ...envRead("messages.queued.list", "/messages/queued", "Read all waiting and sending Summer messages across email, Slack, texts and website chat for a company/environment. Includes paced replies, office-hour queues and company-wide Slack setup messages, original recipients, saved text, next eligible send times and case links. Filter by channel and page with offset/limit. Counts cover the whole queue. Changes nothing and never sends or retries a message."), query: queuedMessagesQuery },
   envRead("reports.delivery", "/reports/delivery", "Read delivery attempts, failures and recorded results. Does not retry a delivery."),
   { id: "delivery.bulk", method: "POST", path: `${environmentPath}/reports/delivery/bulk`, params: environment, body: deliveryBulkInput,
     scope: "investigations.request", alsoScope: "actions.approve", ownership: "environment", effect: "request", mcp: "full", release: "D",
